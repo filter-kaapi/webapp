@@ -25,7 +25,6 @@ app
       console.log("---- HEALTH CHECK ERROR STARTS----");
       console.error("Health check failed:", error.message);
       console.log("---- HEALTH CHECK ERROR ENDS----");
-
       res
         .set("Cache-Control", "no-cache, no-store, must-revalidate")
         .set("Pragma", "no-cache")
@@ -47,10 +46,11 @@ app.use((req, res) => {
     .status(404)
     .set("Cache-Control", "no-cache, no-store, must-revalidate")
     .set("Pragma", "no-cache")
-    .json({
-      status: "error",
-      message: "Error 404: The resource does not exist.",
-    });
+    .end()
+    // .json({
+    //   status: "error",
+    //   message: "Error 404: The resource does not exist.",
+    // });
 });
 
 app.listen(PORT, () => {
