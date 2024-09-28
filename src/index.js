@@ -58,15 +58,15 @@ app.all('/healthz', (req,res) =>{
 
 });
 
-app.use('*', (req,res)=>{
-    res.status(405)
-    .set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    .set('Pragma','no-cache')
-    .json({
-        status: 'error',
-        message:`${req.method}: This method is not allowed for this endpoint.`,
-});
-});
+// app.use('*', (req,res)=>{
+//     res.status(405)
+//     .set('Cache-Control', 'no-cache, no-store, must-revalidate')
+//     .set('Pragma','no-cache')
+//     .json({
+//         status: 'error',
+//         message:`${req.method}: This method is not allowed for this endpoint.`,
+// });
+// });
 
 app.use((req, res) => {
     res.status(404)
