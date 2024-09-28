@@ -7,16 +7,15 @@
 name: basic-validation
 on:
   pull_request:
-    branches: 
-    - main
+    branches:
+      - main
 
 jobs:
   basic-job:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-    - name: Workflow-test command
-      run: echo "This is just a test command to checkworkflow - does nothing"
-
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Workflow-test command
+        run: echo "This is just a test command to checkworkflow - does nothing"
