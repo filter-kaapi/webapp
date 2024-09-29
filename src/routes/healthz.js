@@ -5,7 +5,7 @@
 
 const express =  require ("express");
 const router = express.Router();
-const sequelize = require("../models/models");
+const sequelize = require("../database/sequelize");
 
 
 console.log("inside the healthrouter");

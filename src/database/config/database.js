@@ -1,3 +1,7 @@
+//This file contains the database configuration
+// that will be used my sequelize during initalisaiton.
+// Secrets are stored in the .env file 
+
 require('dotenv').config();
 
 module.exports = {
@@ -10,3 +14,5 @@ module.exports = {
         port: process.env.DB_PORT //5432
     }
 };
+
+
