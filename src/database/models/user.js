@@ -4,7 +4,7 @@
 
 const {DataTypes } = require('sequelize');
 const sequelize = require('../sequelize.js');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
 const User = sequelize.define('User', {
     email:{
@@ -28,31 +28,31 @@ const User = sequelize.define('User', {
         allowNull: false,
 
     },
-    account_created: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
+    // account_created: {
+    //     type: DataTypes.DATE,
+    //     defaultValue: DataTypes.NOW,
 
-    },
-    account_updated: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
+    // },
+    // account_updated: {
+    //     type: DataTypes.DATE,
+    //     defaultValue: DataTypes.NOW,
 
-    },
+    // },
     
 },{
     hooks: {
         beforeCreate: async(user) => {
-            user.passwoord = await bcrypt.hash(User.password, 10);
+            user.password = await bcrypt.hash(user.password, 5);
 
         },
         beforeUpdate: async(user) => {
             if(user.changed('password', true)){
-                user.password = await bcrypt.hash(User.password, 10);
+                user.password = await bcrypt.hash(user.password, 5);
             }
-            user.account_updated = new Date();
+            // user.account_updated = new Date();
         },
     },
-    timestamps: false,
+    timestamps: true,
 });
    
 module.exports = User;

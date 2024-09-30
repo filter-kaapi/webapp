@@ -1,25 +1,39 @@
 // This file handles api/v1/user API endpoints.
 
-const express =  require ("express");
+const express = require("express");
 const router = express.Router();
 const sequelize = require("../database/sequelize");
+const User = require("../database/models/user")
+// route.use(express.json());
 
-router.get('/user', async (req, res) => {
+router.post('/user', async (req, res) => {
     try {
-        if (Object.keys(req.query).length <= 0) {
-            return res.send(400)
-            // .status(400),
-            // .end();
+        if (Object.keys(req.body)) {
+            console.log("---- /user if loop ----");
+            console.log(req.body)
+            console.log(req.body.email)
+
+            const newUser = await User.create({
+                email: req.body.email,
+                firstName: req.body.first_name,
+                lastName: req.body.last_name,
+                password: req.body.password,
+            });
+            console.log(newUser.toJSON());
+            return res.sendStatus(201).json(newUser);
         }
+        
         else {
-            
+            console.log("---- /user else loop ----");
+            return res.sendStatus(400);
         }
-            
-    } catch (error)  {
+
+    } catch (error) {
         console.log("---- HEALTH CHECK ERROR STARTS----");
+        console.log(error)
 
     }
-  });
+});
 // router.get('/user' , async (req,res) =>{
 //     // return res
 //     // .status(200)

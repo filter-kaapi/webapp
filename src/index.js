@@ -6,6 +6,7 @@ const userRoute = require('./routes/userRoutes.js')
 
 app.use("/healthz", healthzRoute);
 
+app.use(express.json()) 
 
 app.use("/v1", userRoute);
 
