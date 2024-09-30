@@ -13,7 +13,7 @@ try {
     console.log('Connection to DB is succesful.');
     console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-    await sequelize.sync({ force: false }); // force: false ensures existing tables are not dropped
+    await sequelize.sync({ force: true }); // force: false ensures existing tables are not dropped
     console.log('All models were synchronized successfully.');
 
 
