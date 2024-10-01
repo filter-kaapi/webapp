@@ -4,9 +4,18 @@ const PORT = process.env.PORT || 8080;
 const healthzRoute = require('./routes/healthz.js')
 const userRoute = require('./routes/userRoutes.js')
 
+app.use(express.json())
+
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
+
+
 app.use("/healthz", healthzRoute);
 
-app.use(express.json()) 
+
 
 app.use("/v1", userRoute);
 

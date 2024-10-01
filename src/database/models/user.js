@@ -2,17 +2,17 @@
 // Hooks reference: https://sequelize.org/docs/v6/other-topics/hooks/#default-hooks-on-sequelize-constructor-options
 
 
-const {DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../sequelize.js');
 const bcrypt = require('bcrypt');
 
 const User = sequelize.define('User', {
     id: {
         type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4, 
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-      },
-    email:{
+    },
+    email: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
@@ -33,20 +33,9 @@ const User = sequelize.define('User', {
         allowNull: false,
 
     },
-    // account_created: {
-    //     type: DataTypes.DATE,
-    //     defaultValue: DataTypes.NOW,
-
-    // },
-    // account_updated: {
-    //     type: DataTypes.DATE,
-    //     defaultValue: DataTypes.NOW,
-
-    // },
-    
-},{
+}, {
     hooks: {
-        beforeCreate: async(user) => {
+        beforeCreate: async (user) => {
             user.password = await bcrypt.hash(user.password, 5);
 
         },
@@ -65,5 +54,5 @@ const User = sequelize.define('User', {
     updatedAt: 'account_updated',
     timestamps: true,
 });
-   
+
 module.exports = User;
