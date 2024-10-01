@@ -20,11 +20,11 @@ const User = sequelize.define('User', {
             isEmail: true
         },
     },
-    firstName: {
+    first_name: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    lastName: {
+    last_name: {
         type: DataTypes.STRING,
         allowNull: false,
     },
@@ -50,13 +50,19 @@ const User = sequelize.define('User', {
             user.password = await bcrypt.hash(user.password, 5);
 
         },
-        beforeUpdate: async(user) => {
-            if(user.changed('password', true)){
+        beforeUpdate: async (user) => {
+            if (user.changed('password')) {
+                console.log('Password changed for user:', user.email);
                 user.password = await bcrypt.hash(user.password, 5);
+                console.log('New hashed password:', user.password);
+            } else {
+                console.log('Password not changed');
             }
-            // user.account_updated = new Date();
         },
     },
+    // tableName: 'csye6225_users'
+    createdAt: 'account_created',
+    updatedAt: 'account_updated',
     timestamps: true,
 });
    

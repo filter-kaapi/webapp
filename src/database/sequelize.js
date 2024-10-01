@@ -4,7 +4,8 @@ const config = require('./config/dbConfig.js').development;
 const sequelize = new Sequelize(config.database, config.username, config.password, {
     host: config.host,
     dialect: config.dialect,
-    port: config.port
+    port: config.port,
+    timezone: '+00:00'
 })
 const connectToDatabase = async () => {
 try {
