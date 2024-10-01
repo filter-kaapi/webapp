@@ -10,25 +10,19 @@
 
 const express = require("express");
 const router = express.Router();
-const sequelize = require("../database/sequelize");
 const User = require("../database/models/user");
 const authenticate = require("../middleware/auth");
 
+
+// PUBLIC Routes 
+// 1. PSOT /user - Responds with 201 User created and 400 Bad request
+
+
 router.post('/user', async (req, res) => {
     const { email, first_name, last_name, password } = req.body;
-    if ( !email 
-        ||!first_name
-        || !last_name
-        || !password) 
-    {
+    if (!email || !first_name || !last_name || !password) {
         return res.status(400).end()
     }
-
-    // if (!Object.keys(req.body)) {
-    //     res.status(400).end()
-    // }
-   
-    
     try {
         const oldUser = await User.findOne({ where: { email } });
         if (oldUser) {
@@ -36,102 +30,88 @@ router.post('/user', async (req, res) => {
             res.status(400).end()
             // User Already Exists 
         }
-        
         const newUser = await User.create({
-            email:req.body.email,
+            email: req.body.email,
             first_name: req.body.first_name,
-                last_name: req.body.last_name,
-                password: req.body.password,
+            last_name: req.body.last_name,
+            password: req.body.password,
         });
         console.log(newUser.toJSON());
-
         return res.status(201).json({
-            id: newUser.id
-        })
+            id: newUser.id,
+            first_name: newUser.first_name,
+            last_name: newUser.last_name,
+            email: newUser.email,
+            account_created: newUser.account_created,
+            account_updated: newUser.account_updated
 
+        })
     } catch (error) {
         console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         console.log("---- USER registration CHECK ERROR STARTS----");
         console.log(error)
-        console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        console.log("~~~~~~~~~USER registration CHECK ERROR ENDS~~~~~~~~~~~~~~")
         return res.status(400);
 
     }
 });
+// AUTHENTICATED routes
+// 1. GET /user/self - Responds with 200 OK with all details 
+// 2. PUT /user/self - Responds with 204 and 400 without any details 
 
 router.get('/user/self', authenticate, async (req, res) => {
     const user = req.user;
     res.status(200).json({
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      account_created: user.account_created,
-      account_updated: user.account_updated,
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        account_created: user.account_created,
+        account_updated: user.account_updated,
     });
-  });
+});
+
 
 router.put('/user/self', authenticate, async (req, res) => {
     const { email, first_name, last_name, password } = req.body;
-
     try {
-        // console.log(`the body is ${req.body}`);
-
-    const user = req.user;
-    // console.log(`the body is ${user}`);
-    console.log(`the user is ${req.user}`);
-
-    console.log(`the firstname is ${first_name}`);
-
-    // const { firstName, lastName, password } = req.body;
-    // console.log("thth"+firstName);
-
-    // if ( !email 
-    //     ||!firstName
-    //     || !l
-    //     || !password) 
-    // {
-    //     return res.status(400).end()
-    // }
-    // try{
-
+        const user = req.user;
+        console.log(`the user is ${req.user}`);
+        console.log(`the firstname is ${first_name}`);
+        if (email) user.email = email;
         if (first_name) user.first_name = first_name;
         if (last_name) user.last_name = last_name;
         if (password) user.password = password;
-        // console.log("Last updated time : "+ User?.updatedAt)
-        // await user.save();
         const result = await user.save();
-    console.log('Save result:', result);  
-        res.status(200).json({
-            id: user.id,
-            email: user.email,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            // createdAt: User.createdAt,
-            // updatedAt: User.updatedAt,
-          });
+        console.log('Save result:', result);
+        res.status(204); // No content - as per swagger
     }
     catch (error) {
-        console.error('Error saving user:', error); // Log the error to understand what's happening
-        res.status(500).json({ message: 'Error updating user' });
+        console.error('Error saving user:', error);
+        res.status(400); // Bad Request - as per swagger
     }
-    
-    
-  });
-  
-// router.get('/user' , async (req,res) =>{
-//     // return res
-//     // .status(200)
-//     // .json({"test": "works"})
-//     // .end()
+});
 
-//     res.send("thisworks")
-// })
-// // router.post('/user', async (req,res) =>{
-//     console.log(req);
-//     console.log("----------- user route----")
-//     console.log(req.body);
-//     // const { email, firstname, lastname, password } = req.body;
-// } )
+// NOT_SUPPORTED ROUTES for /user/self - Respond with 405
+// 1. DELETE 
+// 2. HEAD
+// 3. OPTIONS 
+// 4. PATCH
+
+router.delete('/user/self', async (req, res) => {
+    res.status(405)
+});
+router.head('/user/self', async (req, res) => {
+    res.status(405)
+});
+router.options('/user/self', async (req, res) => {
+    res.status(405)
+});
+router.patch('/user/self', async (req, res) => {
+    res.status(405)
+});
+
+
+
 
 module.exports = router;
