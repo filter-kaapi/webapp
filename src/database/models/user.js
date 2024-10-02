@@ -17,29 +17,45 @@ const User = sequelize.define('User', {
         allowNull: false,
         unique: true,
         validate: {
-            isEmail: true
+            isEmail: true,
+            notEmpty: true
         },
     },
     first_name: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: true,
+            max: 50,
+            isAlpha: true
+        },
     },
     last_name: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: true,
+            max: 50,
+            isAlpha: true
+        },
     },
     password: {
         type: DataTypes.STRING,
         allowNull: false,
 
+
     },
 }, {
     hooks: {
         beforeCreate: async (user) => {
+            user.email = user.email.toLowerCase();
             user.password = await bcrypt.hash(user.password, 5);
 
         },
         beforeUpdate: async (user) => {
+            if (user.changed('email')) {
+                user.email = user.email.toLowerCase();
+            }
             if (user.changed('password')) {
                 console.log('Password changed for user:', user.email);
                 user.password = await bcrypt.hash(user.password, 5);
@@ -49,7 +65,7 @@ const User = sequelize.define('User', {
             }
         },
     },
-    // tableName: 'csye6225_users'
+    tableName: process.env.NODE_ENV === 'test' ? process.env.DB_TABLE_NAME : process.env.DB_TABLE_NAME,
     createdAt: 'account_created',
     updatedAt: 'account_updated',
     timestamps: true,
