@@ -30,6 +30,12 @@ router.post('/user', async (req, res) => {
             res.status(400).end()
             // User Already Exists 
         }
+        if (password.length <= 5) {
+            console.log("Passsword too short")
+            res.status(400).json({ error: "Password too small" })
+            exit;
+
+        }
         const newUser = await User.create({
             email: req.body.email,
             first_name: req.body.first_name,

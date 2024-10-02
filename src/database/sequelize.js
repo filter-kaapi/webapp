@@ -1,17 +1,22 @@
 const { Sequelize } = require('sequelize');
-const config = require('./config/dbConfig.js').development;
+const config = require('./config/dbConfig.js');
 
-const sequelize = new Sequelize(config.database, config.username, config.password, {
-    host: config.host,
-    dialect: config.dialect,
-    port: config.port,
+const env = process.env.NODE_ENV || 'development';
+
+
+const dbConfig = config[env];
+
+const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+    host: dbConfig.host,
+    dialect: dbConfig.dialect,
+    port: dbConfig.port,
     timezone: '+00:00'
 })
 const connectToDatabase = async () => {
     try {
         await sequelize.authenticate();
         console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        console.log('Connection to DB is succesful.');
+        console.log(`Connection to ${process.env.DB_NAME} DB is succesful.`);
         console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
         await sequelize.sync({ force: false }); // force: false ensures existing tables are not dropped
