@@ -32,3 +32,4 @@ app.use("/v1", userRoute);
 app.listen(PORT, () => {
   console.log(`The Server is running on port https://localhost:${PORT}`);
 });
+module.exports = app;
