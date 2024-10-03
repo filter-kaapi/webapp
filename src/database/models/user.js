@@ -69,6 +69,6 @@ const User = sequelize.define('User', {
     createdAt: 'account_created',
     updatedAt: 'account_updated',
     timestamps: true,
+    schema: process.env.DB_SCHEMA,
 });
-
 module.exports = User;
