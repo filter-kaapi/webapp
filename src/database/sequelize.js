@@ -2,7 +2,7 @@ const { Sequelize } = require('sequelize');
 const config = require('./config/dbConfig.js');
 
 const env = process.env.NODE_ENV || 'development';
-
+const theschema = process.env.DB_SCHEMA;
 
 const dbConfig = config[env];
 
@@ -18,6 +18,10 @@ const connectToDatabase = async () => {
         console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         console.log(`Connection to ${process.env.DB_NAME} DB is succesful.`);
         console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+        const schemaName = theschema;
+        await sequelize.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}";`);
+        console.log(`Schema '${schemaName}' checked/created successfully.`);
 
         await sequelize.sync({ force: false }); // force: false ensures existing tables are not dropped
         console.log('All models were synchronized successfully.');
