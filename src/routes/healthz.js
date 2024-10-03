@@ -9,7 +9,13 @@ const sequelize = require("../database/sequelize");
 
 router
   .get("/", async (req, res) => {
+
     try {
+      if (req.method == "HEAD") {
+        console.log(req.method)
+        return res.status(405).end();
+
+      }
       if (Object.keys(req.body).length > 0) {
         console.log(req.body)
         return res.status(405).end();
@@ -52,7 +58,6 @@ router
       .set("Pragma", "no-cache")
       .end();
   });
-
 
 
 module.exports = router;

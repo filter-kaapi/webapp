@@ -191,4 +191,5 @@ describe('User Model', () => {
 
         await expect(User.create(userData)).rejects.toThrow();
     });
+
 });

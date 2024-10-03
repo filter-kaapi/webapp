@@ -31,6 +31,7 @@ router.post('/user', async (req, res) => {
     if (req.body.password.length <= 5) {
         console.log("Passsword too short")
         return res.status(400).json({ error: "Password too small" })
+        // Purposefully keeping this error for better ux
 
 
     }
@@ -72,9 +73,20 @@ router.post('/user', async (req, res) => {
 // 2. PUT /user/self - Responds with 204 and 400 without any details 
 
 router.get('/user/self', authenticate, async (req, res) => {
-    if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
+
+    console.log("inside get");
+
+    if (req.method == "HEAD") {
+        console.log(req.method)
+        return res.status(405).end();
+
+    }
+    if ((Object.keys(req.query).length > 0) || (Object.keys(req.params).length > 0)) {
         return res.status(400).end();
     }
+
+
+
     if (Object.keys(req.body).length > 0) {
         console.log(req.body)
         return res.status(400).end();
@@ -94,26 +106,43 @@ router.get('/user/self', authenticate, async (req, res) => {
 
 router.put('/user/self', authenticate, async (req, res) => {
     const { email, first_name, last_name, password } = req.body;
-    if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
-        return res.status(400).end();
 
+    const itemsinBody = Object.keys(req.body);
+    console.log("dfdfdfdf" + itemsinBody)
+    let invalidFields = []
+    for (let i = 0; i < itemsinBody.length; i++) {
+        const key = itemsinBody[i]
+        if (key !== "first_name" && key !== "last_name" && key !== "password") {
+            invalidFields.push(key);
+        }
+    }
+    if (invalidFields.length > 0) {
+        console.log(invalidFields.length + "its not zero so sending 400")
+        return res.status(400).end();
     }
 
+    if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
+        return res.status(400).end();
+    }
+    if (req.body.account_updated || req.body.account_created) {
+        return res.status(400).end();
+    }
     try {
         const user = req.user;
+
         console.log(`the user is ${req.user.email}`);
         console.log(`the firstname is ${first_name}`);
-        if (email) user.email = email;
+        if (email) { res.status(400).end() }
         if (first_name) user.first_name = first_name;
         if (last_name) user.last_name = last_name;
         if (password) user.password = password;
         const result = await user.save();
         console.log('Save result:', result);
-        res.sendStatus(204); // No content - as per swagger
+        res.status(204).end(); // No content - as per swagger
     }
     catch (error) {
         console.error('Error saving user:', error);
-        res.sendStatus(400); // Bad Request - as per swagger
+        res.status(400).end(); // Bad Request - as per swagger
     }
 });
 
