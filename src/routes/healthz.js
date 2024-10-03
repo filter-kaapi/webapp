@@ -10,6 +10,11 @@ const sequelize = require("../database/sequelize");
 router
   .get("/", async (req, res) => {
     try {
+      if (Object.keys(req.body).length > 0) {
+        console.log(req.body)
+        return res.status(405).end();
+
+      }
       if (Object.keys(req.query).length > 0) {
         return res
           .status(400)
@@ -36,6 +41,11 @@ router
     }
   })
   .all("/", (req, res) => {
+    if (Object.keys(req.body).length > 0) {
+      console.log(req.body)
+      return res.status(405).end();
+
+    }
     res
       .status(405) // Method Not Allowed
       .set("Cache-Control", "no-cache, no-store, must-revalidate")

@@ -50,18 +50,18 @@ describe('User API Integration Tests', () => {
             expect(response.status).toBe(400);
         });
 
-        // it('should return 400 if password is too short', async () => {
-        //     const response = await request(app)
-        //         .post('/v1/user')
-        //         .send({
-        //             email: 'test@example.com',
-        //             first_name: 'John',
-        //             last_name: 'Doe',
-        //             password: '123' // Too short
-        //         });
-        //     expect(response.status).toBe(400);
-        //     expect(response.body.error).toBe("Password too small");
-        // });
+        it('should return 400 if password is too short', async () => {
+            const response = await request(app)
+                .post('/v1/user')
+                .send({
+                    email: 'test@example.com',
+                    first_name: 'John',
+                    last_name: 'Doe',
+                    password: '123' // Too short
+                });
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Password too small");
+        });
 
         it('should return 400 if user already exists', async () => {
             await request(app)

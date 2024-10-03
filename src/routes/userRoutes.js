@@ -19,9 +19,20 @@ const authenticate = require("../middleware/auth");
 
 
 router.post('/user', async (req, res) => {
+    if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
+        return res.status(400).end();
+
+    }
+
     const { email, first_name, last_name, password } = req.body;
     if (!email || !first_name || !last_name || !password) {
         return res.status(400).end()
+    }
+    if (req.body.password.length <= 5) {
+        console.log("Passsword too short")
+        return res.status(400).json({ error: "Password too small" })
+
+
     }
     try {
         const oldUser = await User.findOne({ where: { email } });
@@ -30,12 +41,7 @@ router.post('/user', async (req, res) => {
             res.status(400).end()
             // User Already Exists 
         }
-        // if (password.length <= 5) {
-        //     console.log("Passsword too short")
-        //     res.status(400).json({ error: "Password too small" })
 
-
-        // }
         const newUser = await User.create({
             email: req.body.email,
             first_name: req.body.first_name,
@@ -57,7 +63,7 @@ router.post('/user', async (req, res) => {
         console.log("---- USER registration CHECK ERROR STARTS----");
         console.log(error)
         console.log("~~~~~~~~~USER registration CHECK ERROR ENDS~~~~~~~~~~~~~~")
-        return res.status(400);
+        return res.status(400).end()
 
     }
 });
@@ -66,6 +72,14 @@ router.post('/user', async (req, res) => {
 // 2. PUT /user/self - Responds with 204 and 400 without any details 
 
 router.get('/user/self', authenticate, async (req, res) => {
+    if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
+        return res.status(400).end();
+    }
+    if (Object.keys(req.body).length > 0) {
+        console.log(req.body)
+        return res.status(400).end();
+
+    }
     const user = req.user;
     res.status(200).json({
         id: user.id,
@@ -80,9 +94,14 @@ router.get('/user/self', authenticate, async (req, res) => {
 
 router.put('/user/self', authenticate, async (req, res) => {
     const { email, first_name, last_name, password } = req.body;
+    if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
+        return res.status(400).end();
+
+    }
+
     try {
         const user = req.user;
-        console.log(`the user is ${req.user}`);
+        console.log(`the user is ${req.user.email}`);
         console.log(`the firstname is ${first_name}`);
         if (email) user.email = email;
         if (first_name) user.first_name = first_name;
@@ -90,11 +109,11 @@ router.put('/user/self', authenticate, async (req, res) => {
         if (password) user.password = password;
         const result = await user.save();
         console.log('Save result:', result);
-        res.status(204); // No content - as per swagger
+        res.sendStatus(204); // No content - as per swagger
     }
     catch (error) {
         console.error('Error saving user:', error);
-        res.status(400); // Bad Request - as per swagger
+        res.sendStatus(400); // Bad Request - as per swagger
     }
 });
 
@@ -105,16 +124,49 @@ router.put('/user/self', authenticate, async (req, res) => {
 // 4. PATCH
 
 router.delete('/user/self', async (req, res) => {
-    res.status(405)
+    res.status(405).end()
 });
 router.head('/user/self', async (req, res) => {
-    res.status(405)
+    res.status(405).end()
 });
 router.options('/user/self', async (req, res) => {
-    res.status(405)
+    res.status(405).end()
 });
 router.patch('/user/self', async (req, res) => {
-    res.status(405)
+    res.status(405).end()
+});
+router.post('/user/self', async (req, res) => {
+    res.status(405).end()
+});
+
+
+
+// NOT_SUPPORTED ROUTES for /user - Respond with 405
+// 1. DELETE 
+// 2. HEAD
+// 3. OPTIONS 
+// 4. PATCH
+// 5. GET
+// 6. PUT
+
+
+router.delete('/user', async (req, res) => {
+    res.status(405).end()
+});
+router.head('/user', async (req, res) => {
+    res.status(405).end()
+});
+router.options('/user', async (req, res) => {
+    res.status(405).end()
+});
+router.patch('/user', async (req, res) => {
+    res.status(405).end()
+});
+router.get('/user', async (req, res) => {
+    res.status(405).end()
+});
+router.put('/user', async (req, res) => {
+    res.status(405).end()
 });
 
 
