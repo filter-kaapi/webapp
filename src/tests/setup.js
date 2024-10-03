@@ -15,6 +15,7 @@ if (process.env.NODE_ENV === 'test') {
 const sequelize = require('../database/sequelize');
 beforeAll(async () => {
     await sequelize.sync({ force: true });
+
 });
 
 afterAll(async () => {

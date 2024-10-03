@@ -4,7 +4,7 @@
   "description": "g",
   "main": "src/index.js",
   "scripts": {
-    "test": "NODE_ENV=test jest --forceExit",
+    "test": "NODE_ENV=test jest --detectOpenHandles",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },
