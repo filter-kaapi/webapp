@@ -30,8 +30,9 @@ router.post('/user', async (req, res) => {
     }
     if (req.body.password.length <= 5) {
         console.log("Passsword too short")
-        return res.status(400).json({ error: "Password too small" })
-        // Purposefully keeping this error for better ux
+        return res.status(400).end()
+        // return res.status(400).json({ error: "Password too small" })
+        // Purposefully keeping this error for better ux. NOT. safe zone removing json 
 
 
     }
