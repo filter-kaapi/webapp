@@ -4,7 +4,8 @@
   "description": "g",
   "main": "src/index.js",
   "scripts": {
-    "test": "NODE_ENV=test jest --detectOpenHandles",
+    "test:local": "NODE_ENV=test jest --detectOpenHandles",
+    "test:github": "jest --detectOpenHandles",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },

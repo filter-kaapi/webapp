@@ -2,25 +2,7 @@
 # 1. Is well formatted
 # 2. Is Linted
 
-# This workflow currently just echos a command
-
-# name: basic-validation
-# on:
-#   pull_request:
-#     branches:
-#       - main
-
-# jobs:
-#   basic-job:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout repo
-#         uses: actions/checkout@v3
-#       - name: Workflow-test command
-#         run: echo "This is just a test command to checkworkflow - does nothing"
-
-name: basic-validation
+name: basic-Workflow-validation
 on:
   pull_request:
     branches:
