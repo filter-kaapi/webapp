@@ -19,7 +19,7 @@ describe('User API Integration Tests', () => {
 
             await sequelize.close();
 
-            await server.close();
+            // await server.close();
         } catch (error) {
             console.error("Error closing database connection after tests:", error);
         }
