@@ -7,13 +7,9 @@ let server;
 
 describe('User API Integration Tests', () => {
     beforeAll(async () => {
-        try {
-
-            await sequelize.sync({ force: true }); // Reset database for tests
-        } catch (error) {
-            console.error("Error syncing database before tests:", error);
-        }
+        await sequelize.sync({ force: true });
     });
+
 
     afterAll(async () => {
         try {
