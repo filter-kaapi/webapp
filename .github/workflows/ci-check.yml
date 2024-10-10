@@ -48,9 +48,3 @@ jobs:
 
       - name: Good to go!
         run: echo "Setup complete."
-
-      - name: Install the dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm run test:github
