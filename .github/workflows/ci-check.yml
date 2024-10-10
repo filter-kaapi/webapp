@@ -60,3 +60,6 @@ jobs:
 
       - name: Run tests
         run: npm run test:github
+
+      - name: Good to go!
+        run: echo "Setup complete."
