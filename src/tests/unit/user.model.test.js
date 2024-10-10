@@ -11,10 +11,15 @@ describe('User Model', () => {
     afterAll(async () => {
         await sequelize.close();
     });
+    beforeEach(async () => {
+        await sequelize.sync({ force: true });
+    });
 
     afterEach(async () => {
         await User.destroy({ where: {}, truncate: true });
     });
+
+
     it('should create a user successfully', async () => {
         const userData = {
             email: 'test@example.com',

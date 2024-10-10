@@ -24,6 +24,10 @@ describe('User API Integration Tests', () => {
             console.error("Error closing database connection after tests:", error);
         }
     });
+    beforeEach(async () => {
+        await sequelize.sync({ force: true });
+    });
+
     //Health Check
     describe('GET /healthz', () => {
         it('should return 200 OK for health check', async () => {
