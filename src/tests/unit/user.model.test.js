@@ -11,9 +11,9 @@ describe('User Model', () => {
     afterAll(async () => {
         await sequelize.close();
     });
-    beforeEach(async () => {
-        await sequelize.sync({ force: true });
-    });
+    // beforeEach(async () => {
+    //     await sequelize.sync({ force: true });
+    // });
 
     afterEach(async () => {
         await User.destroy({ where: {}, truncate: true });
