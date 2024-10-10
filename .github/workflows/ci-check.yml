@@ -51,7 +51,15 @@ jobs:
         run: echo "Setup complete."
 
       - name: Install the dependencies
-        run: npm ci
+        run: |
+          sudo apt update
+          sudo apt install -y postgresql postgresql-contrib
+          echo "Starting PostgreSQL service..."
+          sudo systemctl start postgresql
+          sudo -u postgres psql
+          CREATE DATABASE ${{ secrets.DB_NAME }};
+          create USER ${{ secrets.DB_USER }} WITH ENCRYPTED PASSWORD '${{ secrets.DB_PASSWORD }}';
+          GRANT ALL PRIVILEGES ON DATABASE c${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};
 
       - name: Run unit tests
         run: npm run test:github
