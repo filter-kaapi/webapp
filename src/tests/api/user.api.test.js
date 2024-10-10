@@ -6,9 +6,9 @@ const sequelize = require('../../database/sequelize'); // Import your sequelize 
 let server;
 
 describe('User API Integration Tests', () => {
-    // beforeAll(async () => {
-    //     await sequelize.sync({ force: true });
-    // });
+    beforeAll(async () => {
+        await sequelize.sync({ force: true });
+    });
 
 
     afterAll(async () => {
