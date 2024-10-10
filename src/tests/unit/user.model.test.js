@@ -18,8 +18,6 @@ describe('User Model', () => {
     afterEach(async () => {
         await User.destroy({ where: {}, truncate: true });
     });
-
-
     it('should create a user successfully', async () => {
         const userData = {
             email: 'test@example.com',
