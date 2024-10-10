@@ -10,22 +10,21 @@ on:
       - "A[0-9][0-9]/[0-9][0-9]"
 
 jobs:
-  setup:
+  test:
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:13
         env:
-          POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repository
@@ -37,28 +36,15 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Create application database and user
+      - name: Set up PostgreSQL database and user
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE ${DB_NAME};"
-          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE USER ${DB_USER} WITH ENCRYPTED PASSWORD '${DB_PASSWORD}';"
-          PGPASSWORD=postgres psql -h localhost -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE ${{ secrets.DB_NAME }};"
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE USER ${{ secrets.DB_USER }} WITH ENCRYPTED PASSWORD '${{ secrets.DB_PASSWORD }}';"
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};"
         env:
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          until PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c '\q'; do
-            echo "Waiting for PostgreSQL...";
-            sleep 5;
-          done
-        shell: bash
-
-      - name: Good to go!
-        run: echo "Setup complete."
+          PGPASSWORD: postgres
 
       - name: Run unit tests
         run: npm run test:github
@@ -66,3 +52,5 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: localhost
+          DB_PORT: 5432
