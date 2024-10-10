@@ -19,5 +19,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    await sequelize.close();
+    try {
+        // Close database connection or any other teardown logic
+        await sequelize.close();
+    } catch (error) {
+        console.error("Error closing database connection after tests:", error);
+    }
 });
