@@ -39,31 +39,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          until PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c '\q'; do
-            echo "Waiting for PostgreSQL...";
-            sleep 5;
-          done
-        shell: bash
+      # - name: Wait for PostgreSQL to be ready
+      #   run: |
+      #     until PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c '\q'; do
+      #       echo "Waiting for PostgreSQL...";
+      #       sleep 5;
+      #     done
+      #   shell: bash
 
       - name: Good to go!
         run: echo "Setup complete."
 
       - name: Install the dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y postgresql postgresql-contrib
-          echo "Starting PostgreSQL service..."
-          sudo systemctl start postgresql
-          sudo -u postgres psql
-          CREATE DATABASE ${{ secrets.DB_NAME }};
-          create USER ${{ secrets.DB_USER }} WITH ENCRYPTED PASSWORD '${{ secrets.DB_PASSWORD }}';
-          GRANT ALL PRIVILEGES ON DATABASE c${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};
+        run: npm ci
 
       - name: Run unit tests
         run: npm run test:github
         env:
           DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
