@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "test:local": "NODE_ENV=test jest --detectOpenHandles",
-    "test:github": "jest --detectOpenHandles",
+    "test:github": "jest --runInBand --detectOpenHandles",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },

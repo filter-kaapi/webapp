@@ -7,9 +7,9 @@ let server;
 
 describe('User API Integration Tests', () => {
     beforeAll(async () => {
+        await sequelize.authenticate();
         await sequelize.sync({ force: true });
     });
-
 
     afterAll(async () => {
         try {

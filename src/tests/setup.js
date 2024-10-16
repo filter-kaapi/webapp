@@ -1,3 +1,4 @@
+const sequelize = require('../database/sequelize');
 
 if (!process.env.GITHUB_ACTIONS) {
     if (process.env.NODE_ENV === 'test') {
@@ -11,18 +12,25 @@ if (!process.env.GITHUB_ACTIONS) {
     }
 }
 
-
-const sequelize = require('../database/sequelize');
 beforeAll(async () => {
-    await sequelize.sync({ force: true });
-
+    try {
+        await sequelize.authenticate();
+        await sequelize.sync({ force: true });
+    } catch (error) {
+        console.error('Database setup failed:', error);
+        throw error;
+    }
 });
 
+// afterAll(async () => {
+//     try {
+//         // Close database connection or any other teardown logic
+//         await sequelize.close();
+//     } catch (error) {
+//         console.error("Error closing database connection after tests:", error);
+//     }
+// });
+
 afterAll(async () => {
-    try {
-        // Close database connection or any other teardown logic
-        await sequelize.close();
-    } catch (error) {
-        console.error("Error closing database connection after tests:", error);
-    }
+    await sequelize.close();
 });
