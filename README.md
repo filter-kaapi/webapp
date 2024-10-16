@@ -161,4 +161,4 @@ Both `/user` and `/user/self` do not support the following HTTP methods:
 
 ### Local Development
 
-1. Start the application with `npm run test`
+1. Start the application with `npm run test:local`

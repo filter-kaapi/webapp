@@ -5,6 +5,7 @@ const sequelize = require('../../database/sequelize.js');
 
 describe('User Model', () => {
     beforeAll(async () => {
+        await sequelize.authenticate();
         await sequelize.sync({ force: true });
     });
 
