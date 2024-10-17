@@ -1,17 +1,20 @@
-name: Packer Status Check
+name: packer status run
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: ["main"]
 
 jobs:
-  packer_format_validate:
+  packerstatus:
     runs-on: ubuntu-latest
+    name: Run Packer
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Packer
+        uses: hashicorp/setup-packer@main
 
       - name: Run Packer fmt
         run: |
