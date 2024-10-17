@@ -11,6 +11,15 @@ on:
 jobs:
   packer_image_build:
     runs-on: ubuntu-latest
+    env:  
+        NODE_ENV: test
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_SCHEMA: public
+        PORT: ${{ secrets.DB_PORT }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,11 +30,44 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Build Application Artifact
+        name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: "1.10.0"
+      - name: Install Dependencies
         run: |
-          echo "buidld section here"
-
-      - name: Run Packer Build
-        run: |
-          packer build packer.pkr.hcl
+            sudo apt-get update
+            sudo apt-get install -y zip
+  
+            - name: Build Application
+          run: |
+            # Add your build commands here
+            # For example, for Node.js:
+            npm install
+            npm run build
+  
+        - name: Package Application
+          run: |
+            zip -r app.zip .
+  
+        - name: Set up Packer
+          uses: hashicorp/setup-packer@main
+          id: setup
+        with:
+          version: "latest"
+  
+        - name: Run Packer Build
+          run: |
+            packer build packer/packer.pkr.hcl
+  
+        - name: Launch EC2 Instance
+          run: |
+            aws ec2 run-instances \
+              --image-id $(cat ami-id.txt) \
+              --count 1 \
+              --instance-type t2.small \
+              --key-name your-key-pair \
+              --security-group-ids your-security-group \
+              --subnet-id your-subnet-id \
+              --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=YourAppInstance}]'
