@@ -43,7 +43,7 @@ jobs:
           IF NOT EXISTS (
               SELECT FROM pg_catalog.pg_roles
               WHERE rolname = '${POSTGRES_USER}') THEN
-              CREATE USER "${POSTGRES_USER}" WITH PASSWORD '${POSTGRES_PASSWORD}';
+              CREATE USER "${POSTGRES_USER}" WITH PASSWORD "${POSTGRES_PASSWORD};
           END IF;
           END
           \$\$;
