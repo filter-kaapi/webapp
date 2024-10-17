@@ -41,4 +41,4 @@ jobs:
                           -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
                           -var aws_region=${{ secrets.AWS_REGION }} \
                           -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                          packer/packer.pkr.hcl
+                          packer/aws-ubuntu.pkr.hcl
