@@ -1,25 +1,16 @@
-# .github/workflows/build-image.yml
-
 name: Build Packer Image
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-      - "A[0-9][0-9]/[0-9][0-9]"
+    types:
+      - closed
 
 jobs:
   packer_image_build:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    env:  
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_NAME: ${{ secrets.DB_NAME }}
-        DB_USER: ${{ secrets.DB_USER }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_SCHEMA: public
-        PORT: ${{ secrets.DB_PORT }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,44 +21,39 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-        name: Setup `packer`
-        uses: hashicorp/setup-packer@main
-        id: setup
-        with:
-          version: "1.10.0"
+
       - name: Install Dependencies
         run: |
-            sudo apt-get update
-            sudo apt-get install -y zip
-  
-            - name: Build Application
-          run: |
-            # Add your build commands here
-            # For example, for Node.js:
-            npm install
-            npm run build
-  
-        - name: Package Application
-          run: |
-            zip -r app.zip .
-  
-        - name: Set up Packer
-          uses: hashicorp/setup-packer@main
-          id: setup
+          sudo apt-get update
+          sudo apt-get install -y zip nodejs npm postgresql postgresql-contrib
+
+      - name: Start PostgreSQL Service
+        run: sudo service postgresql start
+
+      - name: Configure PostgreSQL User and Database
+        env:
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+        run: |
+          sudo -u postgres psql -c "CREATE USER $POSTGRES_USER WITH PASSWORD '$POSTGRES_PASSWORD';"
+          sudo -u postgres psql -c "ALTER USER $POSTGRES_USER CREATEDB;"
+          sudo -u postgres psql -c "CREATE DATABASE $POSTGRES_DB OWNER $POSTGRES_USER;"
+          echo "PostgreSQL setup completed."
+
+      - name: Build and Test Application
+        run: |
+          npm install
+          npm run test:github
+
+      - name: Package Application
+        run: zip -r webapp.zip .
+
+      - name: Set up Packer
+        uses: hashicorp/setup-packer@main
         with:
           version: "latest"
-  
-        - name: Run Packer Build
-          run: |
-            packer build packer/packer.pkr.hcl
-  
-        - name: Launch EC2 Instance
-          run: |
-            aws ec2 run-instances \
-              --image-id $(cat ami-id.txt) \
-              --count 1 \
-              --instance-type t2.small \
-              --key-name your-key-pair \
-              --security-group-ids your-security-group \
-              --subnet-id your-subnet-id \
-              --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=YourAppInstance}]'
+
+      - name: Run Packer Build
+        run: |
+          packer build packer/packer.pkr.hcl
