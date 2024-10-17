@@ -23,6 +23,11 @@ jobs:
         with:
           version: "latest"
 
+      - name: Run `packer init`
+        id: init
+        working-directory: packer/
+        run: packer init .
+
       - name: Run Packer fmt
         run: |
           packer fmt -check /packer/aws-ubuntu.pckr.hcl
