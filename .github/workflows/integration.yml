@@ -3,6 +3,7 @@ name: Integration Test run
 on:
   pull_request:
     types: [opened, reopened]
+  workflow_dispatch:
 jobs:
   integration:
     runs-on: ubuntu-latest
