@@ -3,8 +3,13 @@ name: packer status run
 on:
   pull_request:
     branches:
-      - main
+      - "main"
+
   workflow_dispatch:
+  push:
+    branches:
+      - "main"
+      - "A[0-9][0-9]/[0-9][0-9]"
 
 jobs:
   packer_format_validate:
