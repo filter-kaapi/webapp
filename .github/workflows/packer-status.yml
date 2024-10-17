@@ -33,7 +33,7 @@ jobs:
 
       - name: Run Packer fmt
         run: |
-          packer fmt -check packer/aws-ubuntu.pckr.hcl
+          packer fmt -check packer/aws-ubuntu.pkr.hcl
           if [[ $(git diff --stat) != '' ]]; then
             echo "Packer template is not formatted correctly."
             exit 1
