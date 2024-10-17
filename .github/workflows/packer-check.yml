@@ -1,0 +1,26 @@
+name: Packer Status Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  packer_format_validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Packer fmt
+        run: |
+          packer fmt -check ./packer/aws-ubuntu.pckr.hcl
+          if [[ $(git diff --stat) != '' ]]; then
+            echo "Packer template is not formatted correctly."
+            exit 1
+          fi
+
+      - name: Run Packer validate
+        run: |
+          packer validate ./packer/aws-ubuntu.pckr.hcl

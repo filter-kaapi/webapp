@@ -140,3 +140,5 @@ ehthumbs.db
 Thumbs.db
 
 .env.test
+*.pkrvars.hcl
+/dummy/*
