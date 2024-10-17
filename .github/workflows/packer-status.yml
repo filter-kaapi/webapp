@@ -3,8 +3,12 @@ name: packer status run
 on:
   pull_request:
     branches:
-      - main
+      - "main"
+
   workflow_dispatch:
+  push:
+    branches:
+      - "main"
 
 jobs:
   packer_format_validate:
@@ -25,7 +29,9 @@ jobs:
 
       - name: Run `packer init`
         id: init
-        run: packer init .
+        run: |
+          cd packer
+          packer init .
 
       - name: Run Packer fmt
         run: |
