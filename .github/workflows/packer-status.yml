@@ -32,7 +32,7 @@ jobs:
         id: init
         run: |
           cd packer
-          packer init .p
+          packer init .
 
       - name: Run Packer fmt
         run: |
