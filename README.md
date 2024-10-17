@@ -159,7 +159,7 @@ Both `/user` and `/user/self` do not support the following HTTP methods:
 
 ## Testing
 
-### Local Development
+### Local Development s
 
 1. Start the application with `npm run test:local`
    or github via
