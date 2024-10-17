@@ -9,6 +9,7 @@ jobs:
   packer_image_build:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    name: Run Packer
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
