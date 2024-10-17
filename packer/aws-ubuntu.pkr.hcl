@@ -51,7 +51,7 @@ build {
   name    = "packer-webapp"
   sources = ["source.amazon-ebs.ubuntu"]
 
-  
+
   provisioner "shell" {
     script = "packer/setup.sh"
   }
