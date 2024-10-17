@@ -20,3 +20,5 @@ echo "Installing unzip"
 sudo apt install -y unzip
 
 sudo mkdir -p /opt/csye6225
+# sudo mv /tmp/webapp/ -d /opt/csye6225/
+echo "Installation completed."
