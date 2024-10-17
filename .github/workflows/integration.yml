@@ -2,8 +2,8 @@ name: Integration Test run
 
 on:
   pull_request:
-    branches: ["main"]
-
+    types: [opened, reopened]
+  workflow_dispatch:
 jobs:
   integration:
     runs-on: ubuntu-latest
