@@ -1,0 +1,40 @@
+name: packer status run
+
+on:
+  pull_request:
+    branches:
+      - "main"
+    types:
+      - opened
+      - synchronize
+  workflow_dispatch:
+
+jobs:
+  packer_format_validate:
+    runs-on: ubuntu-latest
+    name: Run Packer
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: "latest"
+
+      - name: Run Packer fmt
+        run: |
+          packer fmt -check ./packer/aws-ubuntu.pckr.hcl
+          if [[ $(git diff --stat) != '' ]]; then
+            echo "Packer template is not formatted correctly."
+            exit 1
+          fi
+
+      - name: Run Packer validate
+        run: |
+          packer validate -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
+                          -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
+                          -var aws_region=${{ secrets.AWS_REGION }} \
+                          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+                          packer/packer.pkr.hcl
