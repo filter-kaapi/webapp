@@ -2,10 +2,8 @@ name: Build Packer Image
 
 on:
   pull_request:
-    branches:
-      - main
-    types:
-      - closed
+    branches: ["main"]
+    types: ["closed"]
 
 jobs:
   packer_image_build:
