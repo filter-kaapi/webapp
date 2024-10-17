@@ -2,15 +2,10 @@ name: CI-check
 
 on:
   pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
-      - "A[0-9][0-9]/[0-9][0-9]"
+    branches: ["main"]
 
 jobs:
-  integration_test:
+  integration_test_new:
     runs-on: ubuntu-latest
 
     services:
