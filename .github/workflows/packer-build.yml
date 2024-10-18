@@ -9,6 +9,31 @@ on:
 jobs:
   packer_image_build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_SCHEMA: public
+      PORT: ${{ secrets.DB_PORT }}
+
     name: Run Packer
 
     steps:
@@ -22,13 +47,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip nodejs npm postgresql postgresql-contrib
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-      - name: Start PostgreSQL Service
-        run: sudo service postgresql start
+      - name: Install dependencies
+        run: npm install
 
       - name: Wait for PostgreSQL to be ready
         run: |
@@ -36,46 +61,10 @@ jobs:
             echo "Waiting for PostgreSQL...";
             sleep 5;
           done
-
-      - name: Configure PostgreSQL User and Database
-        env:
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-        run: |
-          sudo -u postgres psql -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${POSTGRES_USER}') THEN CREATE USER \"${POSTGRES_USER}\" WITH PASSWORD '${POSTGRES_PASSWORD}'; END IF; END \$\$;"
-          sudo -u postgres psql -c "ALTER USER \"${POSTGRES_USER}\" CREATEDB;"
-          sudo -u postgres psql -c "CREATE DATABASE \"${POSTGRES_DB}\" OWNER \"${POSTGRES_USER}\";"
         shell: bash
 
-      - name: Set environment variables
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_SCHEMA: public
-          PORT: ${{ secrets.DB_PORT }}
-        run: echo "Environment variables set."
-
-      - name: Build and Test Application
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_SCHEMA: public
-          PORT: ${{ secrets.DB_PORT }}
-        run: |
-          npm install
-          npm run test:github
-
-      - name: Package Application
-        run: zip -r webapp.zip .
+      - name: Run tests
+        run: npm run test:github
 
       - name: Set up Packer
         uses: hashicorp/setup-packer@main
