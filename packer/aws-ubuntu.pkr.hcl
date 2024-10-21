@@ -10,7 +10,7 @@ variable "aws_secret_key" {
 }
 
 variable "aws_region" {
-      type    = string
+  type    = string
   default = "us-east-1"
 }
 
@@ -33,7 +33,7 @@ packer {
 
 source "amazon-ebs" "ubuntu" {
   ami_name      = "csye6225_${formatdate("YYYY_MM_DD", timestamp())}"
-  region        = var.aws_region
+  region        = varr.aws_region
   instance_type = var.instance_type
   source_ami_filter {
     filters = {
