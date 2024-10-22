@@ -59,7 +59,7 @@ build {
     script = "packer/usrlogin.sh"
   }
   provisioner "file" {
-    source      = "webapp.zip"
+    source      = "packer/webapp.zip"
     destination = "/tmp/webapp.zip"
   }
 
