@@ -1,13 +1,17 @@
 [Unit]
-Description=CSYE6225 Node.js Web Application
+Description=CSYE 6225 Web Application
 After=network.target postgresql.service
 
 [Service]
+Type=simple
 User=csye6225
-WorkingDirectory=/opt/csye6225/webapp/src
+Group=csye6225
+WorkingDirectory=/opt/csye6225/webapp
+Environment=NODE_ENV=production
+Environment=PORT=8080
 ExecStart=/usr/bin/node /opt/csye6225/webapp/src/index.js
 Restart=always
-Environment=NODE_ENV=production
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

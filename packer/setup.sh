@@ -7,7 +7,8 @@ sudo apt-get update -y
 sudo apt-get upgrade -y
 
 echo "Installing Node and npm"
-sudo apt install -y nodejs npm
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
 
 echo "Installing postgres"
 sudo apt install -y postgresql postgresql-contrib

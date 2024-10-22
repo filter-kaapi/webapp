@@ -58,6 +58,10 @@ build {
   provisioner "shell" {
     script = "packer/usrlogin.sh"
   }
+  provisioner "file" {
+    source      = "webapp.zip"
+    destination = "/tmp/webapp.zip"
+  }
 
   provisioner "file" {
     source      = "packer/csye6225.service"
