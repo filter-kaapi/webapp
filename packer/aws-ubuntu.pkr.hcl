@@ -48,28 +48,28 @@ source "amazon-ebs" "ubuntu" {
 }
 
 build {
-  name    = "packer-webapp"
   sources = ["source.amazon-ebs.ubuntu"]
-
-
+  
   provisioner "shell" {
     script = "packer/setup.sh"
   }
+
   provisioner "shell" {
-    script = "packer/usrlogin.sh"
+    script = "packer/user_setup.sh"
   }
+
   provisioner "file" {
-    source      = "packer/webapp.zip"
+    source = "packer/webapp.zip"
     destination = "/tmp/webapp.zip"
   }
 
   provisioner "file" {
-    source      = "packer/csye6225.service"
-    destination = "/tmp/"
+    source = "packer/csye6225.service"
+    destination = "/tmp/csye6225.service"
   }
+
   provisioner "shell" {
     script = "packer/boot.sh"
   }
-
 }
 
