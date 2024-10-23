@@ -53,9 +53,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Delete any created node_modules
-        run: rm -r node_modules
-
       - name: Prepare application for Packer
         run: |
           mkdir -p artifacts
