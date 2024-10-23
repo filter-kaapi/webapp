@@ -49,7 +49,7 @@ source "amazon-ebs" "ubuntu" {
 
 build {
   sources = ["source.amazon-ebs.ubuntu"]
-  
+
   provisioner "shell" {
     script = "packer/setup.sh"
   }
@@ -59,12 +59,12 @@ build {
   }
 
   provisioner "file" {
-    source = "packer/webapp.zip"
+    source      = "packer/webapp.zip"
     destination = "/tmp/webapp.zip"
   }
 
   provisioner "file" {
-    source = "packer/csye6225.service"
+    source      = "packer/csye6225.service"
     destination = "/tmp/csye6225.service"
   }
 
