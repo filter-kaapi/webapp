@@ -21,6 +21,13 @@ until sudo systemctl is-active --quiet postgresql; do
   sleep 5
 done
 
+sudo -u postgres psql <<EOF
+CREATE DATABASE ${DB_NAME};
+CREATE USER ${DB_USER} WITH ENCRYPTED PASSWORD '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
+EOF
+
+
 echo "Installing unzip"
 sudo apt install -y unzip
 
