@@ -70,6 +70,6 @@ build {
   provisioner "shell" {
     script = "packer/boot.sh"
   }
-  
+
 }
 
