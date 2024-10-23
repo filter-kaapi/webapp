@@ -57,11 +57,6 @@ build {
   provisioner "shell" {
     script = "packer/user_setup.sh"
   }
-  # Copy the .env file to the AMI
-  provisioner "file" {
-    source      = ".env"
-    destination = "/opt/csye6225/webapp/.env"
-  }
   provisioner "file" {
     source      = "packer/webapp.zip"
     destination = "/tmp/webapp.zip"
