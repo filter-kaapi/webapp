@@ -5,7 +5,7 @@ export DEBIAN_FRONTEND=noninteractive
 sudo unzip /tmp/webapp.zip -d /opt/csye6225/webapp/
 sudo chown -R csye6225:csye6225 /opt/csye6225
 cd /opt/csye6225/webapp
-sudo -u csye6225 npm install --production
+sudo -u csye6225 npm install --omit-dev
 sudo mv /tmp/csye6225.service /etc/systemd/system/
 
 echo "moved the csye6225 service file"
