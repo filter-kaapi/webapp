@@ -16,6 +16,11 @@ sudo apt install -y postgresql postgresql-contrib
 sudo systemctl enable postgresql
 sudo systemctl start postgresql
 
+until sudo systemctl is-active --quiet postgresql; do
+  echo "Waiting for PostgreSQL to start..."
+  sleep 5
+done
+
 echo "Installing unzip"
 sudo apt install -y unzip
 
