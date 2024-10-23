@@ -8,7 +8,7 @@ const theschema = process.env.DB_SCHEMA;
 
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
     host: dbConfig.host,
-    dialect: dbConfig.dialect,
+    dialect: dbConfig.dialect || 'postgres',
     port: dbConfig.port,
     timezone: '+00:00'
 })
