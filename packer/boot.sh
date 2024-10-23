@@ -2,8 +2,13 @@
 set -e
 export DEBIAN_FRONTEND=noninteractive
 
+sudo mkdir -p /opt/csye6225/webapp
+sudo chown -R csye6225:csye6225 /opt/csye6225
+
+
 # Extract webapp
-sudo unzip /tmp/webapp.zip -d /opt/csye6225/webapp/
+cd /tmp
+sudo unzip /webapp.zip -d /opt/csye6225/webapp/
 sudo chown -R csye6225:csye6225 /opt/csye6225
 
 # Install dependencies
