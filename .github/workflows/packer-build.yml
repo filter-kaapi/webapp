@@ -46,13 +46,13 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Create .env file
         run: |
-          echo "NODE_ENV=development" > .env
+          echo "NODE_ENV=${{ secrets.DB_NAME }}" > .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASSWORD='${{ secrets.DB_PASSWORD }}'" >> .env
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "PORT="${{ secrets.PORT }}" >> .env
+          echo "PORT='${{ secrets.PORT }}'" >> .env
           echo "DB_TABLE_NAME=${{ secrets.DB_TABLE_NAME }}" >> .env
           echo "DB_SCHEMA='${{ secrets.DB_SCHEMA }}'" >> .env
 
