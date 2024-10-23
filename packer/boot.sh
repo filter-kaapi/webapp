@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
+export DEBIAN_FRONTEND=noninteractive
+
 sudo unzip /tmp/webapp.zip -d /opt/csye6225/webapp/
 sudo chown -R csye6225:csye6225 /opt/csye6225
 cd /opt/csye6225/webapp
