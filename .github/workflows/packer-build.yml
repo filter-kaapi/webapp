@@ -53,14 +53,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Prepare application for Packer
-        run: |
-          mkdir -p artifacts
-          cp -r src package.json package-lock.json artifacts/
-          cd artifacts
-          zip -r ../packer/webapp.zip .
-          cd ..
-
       - name: Wait for PostgreSQL to be ready
         run: |
           until pg_isready -h localhost -p 5432; do
@@ -71,6 +63,19 @@ jobs:
 
       - name: Run tests
         run: npm run test:github
+
+      - name: Delete any created node_modules
+        run: rm -r node_modules
+
+      # - name: Prepare application for Packer
+      #   run: |
+      #     mkdir -p artifacts
+      #     cp -r src package.json package-lock.json artifacts/
+      #     cd artifacts
+      #     zip -r ../packer/webapp.zip .
+      #     cd ..
+      - name: Zip webapp file
+        run: cd ../ && zip -r webapp.zip webapp && cd - && cp ../webapp.zip .
 
       - name: Run `packer init`
         id: init

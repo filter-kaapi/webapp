@@ -12,7 +12,7 @@ sudo chown -R csye6225:csye6225 /opt/csye6225
 cd /opt/csye6225/webapp
 
 # Run npm install with the correct user
-sudo -u csye6225 npm install
+sudo -u csye6225 npm install --omit=dev
 
 sudo mv /tmp/csye6225.service /etc/systemd/system/
 
