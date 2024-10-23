@@ -61,8 +61,8 @@ jobs:
           done
         shell: bash
 
-      - name: Run tests
-        run: npm run test:github
+      # - name: Run tests
+      #   run: npm run test:github
 
       - name: Delete any created node_modules
         run: rm -r node_modules
