@@ -51,7 +51,7 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        run: sudo npm install
+        run: npm install
 
       - name: Prepare application for Packer
         run: |
