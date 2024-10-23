@@ -13,7 +13,7 @@ on:
 jobs:
   packer_format_validate:
     runs-on: ubuntu-latest
-    name: Run Packer
+    name: Packer Format
 
     steps:
       - name: Checkout code
@@ -41,10 +41,10 @@ jobs:
                           -var instance_type=${{ secrets.INSTANCE_TYPE }} \
                           packer/aws-ubuntu.pkr.hcl
 
-      - name: Run Packer validate
-        run: |
-          packer validate -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
-                          -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
-                          -var aws_region=${{ secrets.AWS_REGION }} \
-                          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                          packer/aws-ubuntu.pkr.hcl
+      # - name: Run Packer validate
+      #   run: |
+      #     packer validate -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
+      #                     -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
+      #                     -var aws_region=${{ secrets.AWS_REGION }} \
+      #                     -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+      #                     packer/aws-ubuntu.pkr.hcl

@@ -12,6 +12,9 @@ if [ ! -d "$directory" ]; then
 fi
 
 # Change ownership and permissions
-sudo groupadd csye6225
-sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225
+sudo groupadd -f csye6225
+
+# Create user with home directory
+sudo useradd -m -d /home/csye6225 -s /usr/sbin/nologin -g csye6225 csye6225
+
 sudo chown -R csye6225:csye6225 "$directory"

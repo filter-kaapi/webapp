@@ -1,8 +1,6 @@
 name: Build Packer Image
 
 on:
-  pull_request:
-    branches: ["main"]
   push:
     branches: ["main"]
 
@@ -54,6 +52,14 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Prepare application for Packer
+        run: |
+          mkdir -p artifacts
+          cp -r src package.json package-lock.json artifacts/
+          cd artifacts
+          zip -r ../packer/webapp.zip .
+          cd ..
 
       - name: Wait for PostgreSQL to be ready
         run: |
