@@ -29,7 +29,7 @@ jobs:
       DB_NAME: ${{ secrets.DB_NAME }}
       DB_USER: ${{ secrets.DB_USER }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_SCHEMA: public
+      DB_SCHEMA: ${{ secrets.DB_SCHEMA }}
       PORT: ${{ secrets.DB_PORT }}
 
     name: Run Packer

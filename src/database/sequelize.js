@@ -33,7 +33,7 @@ const connectToDatabase = async () => {
         console.log(`Connection to ${process.env.DB_NAME} DB is succesful.`);
         console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-        const schemaName = theschema;
+        const schemaName = dbConfig.schema;
         await sequelize.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}";`);
         console.log(`Schema '${schemaName}' checked/created successfully.`);
 
