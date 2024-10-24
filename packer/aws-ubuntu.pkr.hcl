@@ -32,7 +32,7 @@ packer {
 
 
 source "amazon-ebs" "ubuntu" {
-  ami_name      = "csye6225_${substring(isotime, 0, 10)}-${substring(isotime, 11, 2)}-${substring(isotime, 14, 2)}"
+  ami_name      = "csye6225_${formatdate("YYYY_MM_DD_HH_mm_ss", timestamp())}"
   region        = var.aws_region
   instance_type = var.instance_type
   source_ami_filter {
