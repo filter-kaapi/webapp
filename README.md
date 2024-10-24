@@ -166,3 +166,5 @@ Both `/user` and `/user/self` do not support the following HTTP methods:
    `npm run test:github`
 
 ##
+
+Check the infra repo for more information
