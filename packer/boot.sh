@@ -9,6 +9,7 @@ cd /opt/csye6225/webapp
 
 # Set HOME environment variable and run npm install
 sudo npm install --omit=dev
+sudo cp /opt/csye6225/webapp/.env /etc/csye6225.env
 
 # Move the service file and enable it
 sudo mv /tmp/csye6225.service /etc/systemd/system/
