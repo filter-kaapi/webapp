@@ -16,6 +16,7 @@ const upload = require('../middleware/fileUpload');
 const AWS = require('../aws/awsconfig');
 const s3 = new AWS.S3();
 const path = require('path');
+const UserProfilePic = require('../database/models/userProfilePic'); // Adjust the path as necessary
 
 
 
@@ -154,18 +155,57 @@ router.put('/user/self', authenticate, async (req, res) => {
     }
 });
 
-router.post('/user/self/pic', authenticate, upload.single('profilePic'), async (req, res) => {
-    console.log(" inside bro"
-    )
-    const file = req.file;
-    if (!file) {
-        return res.status(400).end() // Bad Reqeust - as per swagger
-    }
-    const fileExtension = path.extname(file.originalname);
-    console.log(fileExtension)
-    // console.log(req.user);
-});
 
+router.post('/user/self/pic', authenticate, upload.single('profilePic'), async (req, res) => {
+    try {
+        console.log("Inside profile pic upload");
+
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const fileExtension = path.extname(file.originalname);
+        console.log("File extension:", fileExtension);
+
+        const user = req.user;
+        console.log("User ID:", user.id);
+
+        const fileKey = `profile-pics/${user.id}/${Date.now()}${fileExtension}`;
+
+        const s3 = new AWS.S3();
+        const params = {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: fileKey,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+            Metadata: {
+                userId: user.id.toString(),
+            },
+        };
+
+        const existingPic = await UserProfilePic.findOne({ where: { user_id: user.id } });
+        if (existingPic) {
+            return res.status(400).json({ message: "User already has a profile picture" });
+        }
+
+        const s3Response = await s3.upload(params).promise();
+        console.log("S3 Upload Response:", s3Response);
+
+        const newPic = await UserProfilePic.create({
+            file_name: file.originalname,
+            user_id: user.id,
+            url: s3Response.Location,
+            upload_date: new Date(),
+            s3_key: fileKey,
+        });
+
+        res.status(201).json(newPic);
+    } catch (error) {
+        console.error("Error uploading to S3:", error);
+        return res.status(500).json({ message: "Error uploading to S3", error: error.message });
+    }
+});
 // NOT_SUPPORTED ROUTES for /user/self - Respond with 405
 // 1. DELETE 
 // 2. HEAD

@@ -71,4 +71,10 @@ const User = sequelize.define('User', {
     timestamps: true,
     schema: process.env.DB_SCHEMA,
 });
+User.associate = (models) => {
+    User.hasOne(models.UserProfilePic, {
+        foreignKey: 'user_id',
+        as: 'profilePic',
+    });
+};
 module.exports = User;
