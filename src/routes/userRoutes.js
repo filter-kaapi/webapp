@@ -12,6 +12,11 @@ const express = require("express");
 const router = express.Router();
 const User = require("../database/models/user");
 const authenticate = require("../middleware/auth");
+const upload = require('../middleware/fileUpload');
+const AWS = require('../aws/awsconfig');
+const s3 = new AWS.S3();
+const path = require('path');
+
 
 
 // PUBLIC Routes 
@@ -71,8 +76,10 @@ router.post('/user', async (req, res) => {
 });
 // AUTHENTICATED routes
 // 1. GET /user/self - Responds with 200 OK with all details 
-// 2. PUT /user/self - Responds with 204 and 400 without any details 
-
+// 2. PUT /user/self - Responds with 204 and 400 without any details, ignore the email added. 
+// 3. POST /user/self/pic - Responds with 201 Profile Pic Added/Updated with file_name, id, url, upload_date, user_id and 400 BadRequest without any details. 
+// 4. GET /user/self/pic - 200 OK with all details and 404 Not Found
+// 5. DELETE /user/self/pic - 204 (no content) for sucess, 401 for Unauthorized, 404 if not found. 
 router.get('/user/self', authenticate, async (req, res) => {
 
     console.log("inside get");
@@ -145,6 +152,18 @@ router.put('/user/self', authenticate, async (req, res) => {
         console.error('Error saving user:', error);
         res.status(400).end(); // Bad Request - as per swagger
     }
+});
+
+router.post('/user/self/pic', authenticate, upload.single('profilePic'), async (req, res) => {
+    console.log(" inside bro"
+    )
+    const file = req.file;
+    if (!file) {
+        return res.status(400).end() // Bad Reqeust - as per swagger
+    }
+    const fileExtension = path.extname(file.originalname);
+    console.log(fileExtension)
+    // console.log(req.user);
 });
 
 // NOT_SUPPORTED ROUTES for /user/self - Respond with 405
