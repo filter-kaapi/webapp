@@ -146,90 +146,77 @@ router.put("/user/self", authenticate, async (req, res) => {
     }
 });
 
-router.post(
-    "/user/self/pic",
-    authenticate,
-    upload.single("profilePic"),
-    async (req, res) => {
-        try {
-            // Validate file presence
-            const file = req.file;
-            if (!file) {
-                return res.status(400).json({ message: "No file uploaded" });
-            }
-            // Validate file type
-            const fileExtension = path.extname(file.originalname).toLowerCase();
-            const allowedExtensions = [".jpg", ".jpeg", ".png"];
-            if (!allowedExtensions.includes(fileExtension)) {
-                return res.status(400).json({
-                    message:
-                        "Invalid file type. Only JPG, JPEG, and PNG files are allowed",
-                });
-            }
-
-            const user = req.user;
-            console.log("User ID:", user.id);
-
-            // Check for existing profile picture
-            const existingPic = await UserProfilePic.findOne({
-                where: { user_id: user.id },
-            });
-
-            if (existingPic) {
-                return res.status(400).json({
-                    message: "User already has a profile picture",
-                });
-            }
-
-            // Generate unique file key
-            const fileKey = `profile-pics/${user.id}/${Date.now()}${fileExtension}`;
-
-            // Prepare upload parameters
-            const uploadParams = {
-                Bucket: process.env.S3_BUCKET_NAME,
-                Key: fileKey,
-                Body: file.buffer,
-                ContentType: file.mimetype,
-                Metadata: {
-                    userId: user.id.toString(),
-                    originalName: file.originalname,
-                    uploadDate: new Date().toISOString()
-                },
-            };
-            const command = new CreateMultipartUploadCommand(uploadParams);
-            const s3response = await AWS.send(command);
-
-            console.log("S3 Upload Response:", s3response);
-
-            // Create database record
-            const newPic = await UserProfilePic.create({
-                file_name: file.originalname,
-                user_id: user.id,
-                url: fileKey,
-                upload_date: new Date().toISOString(),
-                s3_bucket_path: fileKey,
-                file_size: file.size,
-                content_type: file.mimetype,
-            });
-            console.log(newPic.upload_date)
-            formattedDateup = newPic.upload_date.toISOString().slice(0, 10);
-            // Return success response
-            res.status(201).json({
-                file_name: newPic.file_name,
-
-                id: newPic.id,
-                url: newPic.url,
-                upload_date: formattedDateup,
-                user_id: newPic.user_id,
-            });
-        } catch (error) {
-            console.error("Error uploading to S3:", error);
-            return res.status(500).json({
-                message: "Error uploading to S3",
-                error: error.message,
-            });
+router.post("/user/self/pic", authenticate, upload.single("profilePic"), async (req, res) => {
+    try {
+        // Validate file presence
+        const file = req.file;
+        if (!file) {
+            return res.status(400).end(); // As per Swagger
         }
+        // Validate file type
+        const fileExtension = path.extname(file.originalname).toLowerCase();
+        const allowedExtensions = [".jpg", ".jpeg", ".png"];
+        if (!allowedExtensions.includes(fileExtension)) {
+            return res.status(400).end(); // As per swagger
+        }
+
+        const user = req.user;
+        console.log("User ID:", user.id);
+
+        // Check for existing profile picture
+        const existingPic = await UserProfilePic.findOne({
+            where: { user_id: user.id },
+        });
+
+        if (existingPic) {
+            return res.status(400).end(); //As per swagger
+        }
+
+        // Generate unique file key
+        const fileKey = `profile-pics/${user.id}/${Date.now()}${fileExtension}`;
+
+        // Prepare upload parameters
+        const uploadParams = {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: fileKey,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+            Metadata: {
+                userId: user.id.toString(),
+                originalName: file.originalname,
+                uploadDate: new Date().toISOString()
+            },
+        };
+        const command = new CreateMultipartUploadCommand(uploadParams);
+        const s3response = await AWS.send(command);
+
+        console.log("S3 Upload Response:", s3response);
+
+        // Create database record
+        const newPic = await UserProfilePic.create({
+            file_name: file.originalname,
+            user_id: user.id,
+            url: fileKey,
+            upload_date: new Date().toISOString(),
+            s3_bucket_path: fileKey,
+            file_size: file.size,
+            content_type: file.mimetype,
+        });
+        console.log(newPic.upload_date)
+        formattedDateup = newPic.upload_date.toISOString().slice(0, 10);
+        // Return success response
+        res.status(201).json({
+            file_name: newPic.file_name,
+            id: newPic.id,
+            url: newPic.url,
+            upload_date: formattedDateup,
+            user_id: newPic.user_id,
+        });
+    } catch (error) {
+        console.error("Error uploading to S3:", error);
+        return res.status(400).end(); // As per Swagger 
     }
+}
 );
 
 router.delete("/user/self/pic", authenticate, async (req, res) => {
@@ -243,16 +230,12 @@ router.delete("/user/self/pic", authenticate, async (req, res) => {
         });
 
         if (!existingPic) {
-            return res.status(404).json({
-                message: "Profile picture not found",
-            });
+            return res.status(404).end(); //As Per swagger
         }
 
         // Check if the picture belongs to the authenticated user
         if (existingPic.user_id !== user.id) {
-            return res.status(403).json({
-                message: "Unauthorized to delete this profile picture",
-            });
+            return res.status(401).end(); //As per swagger
         }
 
         // Delete the image from S3
@@ -270,72 +253,67 @@ router.delete("/user/self/pic", authenticate, async (req, res) => {
         await existingPic.destroy();
 
         // Return success response
-        res.status(200).json({
-            message: "Profile picture deleted successfully",
-        });
+        res.status(204).end(); //As per swagger
     } catch (error) {
         console.error("Error deleting profile picture:", error);
-        return res.status(500).json({
-            message: "Error deleting profile picture",
-            error: error.message,
-        });
+        return res.status(404).end() // As per swagger
     }
 });
 
-router.get(
-    "/user/self/pic",
-    authenticate,
-    async (req, res) => {
-        try {
-            // Validate file presence
+router.get("/user/self/pic", authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        console.log("User ID:", user.id);
+
+        // Check for existing profile picture
+        const Pic = await UserProfilePic.findOne({
+            where: { user_id: user.id },
+        });
 
 
-            const user = req.user;
-            console.log("User ID:", user.id);
-
-            // Check for existing profile picture
-            const Pic = await UserProfilePic.findOne({
-                where: { user_id: user.id },
-            });
-
-
-            // Create database record
-            // const newPic = await UserProfilePic.findAll({
-            //     file_name: file.originalname,
-            //     user_id: user.id,
-            //     url: fileKey,
-            //     upload_date: new Date(),
-            //     s3_bucket_path: fileKey,
-            //     file_size: file.size,
-            //     content_type: file.mimetype,
-            // });
-
-            if (Pic) {
-                const uploadDate = Pic.upload_date;
-                formattedDate = uploadDate.toISOString().slice(0, 10);
-                res.status(201).json({
-                    file_name: Pic.file_name,
-                    id: Pic.id,
-                    url: Pic.url,
-                    upload_date: formattedDate,
-                    user_id: Pic.user_id,
-                });
-            }
-            else {
-                res.status(404).end();
-            }
-
-
-
-        } catch (error) {
-            console.error("Error finding image:", error);
-            return res.status(500).json({
-                message: "Error finding image in S3",
-                error: error.message,
+        if (Pic) {
+            const uploadDate = Pic.upload_date;
+            formattedDate = uploadDate.toISOString().slice(0, 10);
+            res.status(201).json({
+                file_name: Pic.file_name,
+                id: Pic.id,
+                url: Pic.url,
+                upload_date: formattedDate,
+                user_id: Pic.user_id,
             });
         }
+        else {
+            res.status(404).end(); // As per swagger 
+        }
+
+
+
+    } catch (error) {
+        console.error("Error finding image:", error);
+        return res.status(404).end() //As per swagger
     }
+}
 );
+
+// NOT_SUPPORTED ROUTES for /user/self/pic - Respond with 405
+// 1. PUT
+// 2. HEAD
+// 3. OPTIONS
+// 4. PATCH
+
+router.put("/user/self/pic", async (req, res) => {
+    res.status(405).end();
+});
+router.head("/user/self/pic", async (req, res) => {
+    res.status(405).end();
+});
+router.options("/user/self/pic", async (req, res) => {
+    res.status(405).end();
+});
+router.patch("/user/self/pic", async (req, res) => {
+    res.status(405).end();
+});
+
 
 // NOT_SUPPORTED ROUTES for /user/self - Respond with 405
 // 1. DELETE
