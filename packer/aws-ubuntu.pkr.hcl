@@ -67,6 +67,16 @@ build {
     source      = "packer/csye6225.service"
     destination = "/tmp/csye6225.service"
   }
+  provisioner "file" {
+    source      = "packer/cloudwatch-config.json"
+    destination = "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s"
+    ]
+  }
 
   provisioner "shell" {
     script = "packer/boot.sh"
