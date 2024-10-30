@@ -18,11 +18,15 @@ const {
 const AWS = require("../aws/awsconfig");
 const path = require("path");
 const UserProfilePic = require("../database/models/userProfilePic");
-
+const client = require("../../metrics/metrics")
 // PUBLIC Routes
 // 1. PSOT /user - Responds with 201 User created and 400 Bad request
 
 router.post("/user", async (req, res) => {
+    client.increment('api.v1.user.post');  // Increment call count for POST /user
+    const start = Date.now();
+
+
     if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
         return res.status(400).end();
     }
@@ -52,6 +56,7 @@ router.post("/user", async (req, res) => {
             password: req.body.password,
         });
         console.log(newUser.toJSON());
+        client.timing('api.user.post.response_time', Date.now() - start);  // Track response time
         return res.status(201).json({
             id: newUser.id,
             first_name: newUser.first_name,
@@ -79,6 +84,8 @@ router.post("/user", async (req, res) => {
 
 router.get("/user/self", authenticate, async (req, res) => {
     console.log("inside get");
+    client.increment('api.v1.user.get_self');  // Increment call count for GET /user/self
+    const start = Date.now();
 
     if (req.method == "HEAD") {
         console.log(req.method);
@@ -93,6 +100,7 @@ router.get("/user/self", authenticate, async (req, res) => {
         return res.status(400).end();
     }
     const user = req.user;
+    client.timing('api.v1.user.get_self.response_time', Date.now() - start);  // Track response time
     res.status(200).json({
         id: user.id,
         email: user.email,
@@ -105,6 +113,8 @@ router.get("/user/self", authenticate, async (req, res) => {
 
 router.put("/user/self", authenticate, async (req, res) => {
     const { email, first_name, last_name, password } = req.body;
+    client.increment('api.v1.user.put_self');  // Increment call count for GET /user/self
+    const start = Date.now();
 
     const itemsinBody = Object.keys(req.body);
     console.log("dfdfdfdf" + itemsinBody);
@@ -131,14 +141,16 @@ router.put("/user/self", authenticate, async (req, res) => {
 
         console.log(`the user is ${req.user.email}`);
         console.log(`the firstname is ${first_name}`);
-        if (email) {
-            res.status(400).end();
-        }
+        // if (email) {
+        //     res.status(400).end();
+        // }
         if (first_name) user.first_name = first_name;
         if (last_name) user.last_name = last_name;
         if (password) user.password = password;
         const result = await user.save();
         console.log("Save result:", result);
+        client.timing('api.v1.user.put_self.response_time', Date.now() - start);  // Track response time
+
         res.status(204).end(); // No content - as per swagger
     } catch (error) {
         console.error("Error saving user:", error);
@@ -149,6 +161,8 @@ router.put("/user/self", authenticate, async (req, res) => {
 router.post("/user/self/pic", authenticate, upload.single("profilePic"), async (req, res) => {
     try {
         // Validate file presence
+        client.increment('api.v1.user.self.post_pic');  // Increment call count for GET /user/self
+        const start = Date.now();
         const file = req.file;
         if (!file) {
             return res.status(400).end(); // As per Swagger
@@ -205,6 +219,7 @@ router.post("/user/self/pic", authenticate, upload.single("profilePic"), async (
         console.log(newPic.upload_date)
         formattedDateup = newPic.upload_date.toISOString().slice(0, 10);
         // Return success response
+        client.timing('api.v1.user.self.post_pic.response_time', Date.now() - start);  // Track response time
         res.status(201).json({
             file_name: newPic.file_name,
             id: newPic.id,
@@ -221,6 +236,8 @@ router.post("/user/self/pic", authenticate, upload.single("profilePic"), async (
 
 router.delete("/user/self/pic", authenticate, async (req, res) => {
     try {
+        client.increment('api.v1.user.self.delete_pic');  // Increment call count for GET /user/self
+        const start = Date.now();
         const user = req.user;
         console.log("User ID:", user.id);
 
@@ -251,7 +268,7 @@ router.delete("/user/self/pic", authenticate, async (req, res) => {
 
         // Delete the database record (hard delete)
         await existingPic.destroy();
-
+        client.timing('api.v1.user.self.delete_pic.response_time', Date.now() - start);  // Track response time
         // Return success response
         res.status(204).end(); //As per swagger
     } catch (error) {
@@ -262,6 +279,8 @@ router.delete("/user/self/pic", authenticate, async (req, res) => {
 
 router.get("/user/self/pic", authenticate, async (req, res) => {
     try {
+        client.increment('api.v1.user.self.get_pic');  // Increment call count for GET /user/self
+        const start = Date.now();
         const user = req.user;
         console.log("User ID:", user.id);
 
@@ -274,6 +293,7 @@ router.get("/user/self/pic", authenticate, async (req, res) => {
         if (Pic) {
             const uploadDate = Pic.upload_date;
             formattedDate = uploadDate.toISOString().slice(0, 10);
+            client.timing('api.v1.user.self.get_pic.response_time', Date.now() - start);  // Track response time
             res.status(201).json({
                 file_name: Pic.file_name,
                 id: Pic.id,
@@ -302,18 +322,21 @@ router.get("/user/self/pic", authenticate, async (req, res) => {
 // 4. PATCH
 
 router.put("/user/self/pic", async (req, res) => {
+    client.increment('api.v1.user.self.pic.put_unsupported');
     res.status(405).end();
 });
 router.head("/user/self/pic", async (req, res) => {
+    client.increment('api.v1.user.self.pic.head_unsupported');
     res.status(405).end();
 });
 router.options("/user/self/pic", async (req, res) => {
+    client.increment('api.v1.user.self.pic.options_unsupported');
     res.status(405).end();
 });
 router.patch("/user/self/pic", async (req, res) => {
+    client.increment('api.v1.user.self.pic.patch_unsupported');
     res.status(405).end();
 });
-
 
 // NOT_SUPPORTED ROUTES for /user/self - Respond with 405
 // 1. DELETE
@@ -322,21 +345,25 @@ router.patch("/user/self/pic", async (req, res) => {
 // 4. PATCH
 
 router.delete("/user/self", async (req, res) => {
+    client.increment('api.v1.user.self.delete_unsupported');
     res.status(405).end();
 });
 router.head("/user/self", async (req, res) => {
+    client.increment('api.v1.user.self.head_unsupported');
     res.status(405).end();
 });
 router.options("/user/self", async (req, res) => {
+    client.increment('api.v1.user.self.options_unsupported');
     res.status(405).end();
 });
 router.patch("/user/self", async (req, res) => {
+    client.increment('api.v1.user.self.patch_unsupported');
     res.status(405).end();
 });
 router.post("/user/self", async (req, res) => {
+    client.increment('api.v1.user.self.post_unsupported');
     res.status(405).end();
 });
-
 // NOT_SUPPORTED ROUTES for /user - Respond with 405
 // 1. DELETE
 // 2. HEAD
@@ -346,22 +373,27 @@ router.post("/user/self", async (req, res) => {
 // 6. PUT
 
 router.delete("/user", async (req, res) => {
+    client.increment('api.v1.user.delete_unsupported');
     res.status(405).end();
 });
 router.head("/user", async (req, res) => {
+    client.increment('api.v1.user.head_unsupported');
     res.status(405).end();
 });
 router.options("/user", async (req, res) => {
+    client.increment('api.v1.user.options_unsupported');
     res.status(405).end();
 });
 router.patch("/user", async (req, res) => {
+    client.increment('api.v1.user.patch_unsupported');
     res.status(405).end();
 });
 router.get("/user", async (req, res) => {
+    client.increment('api.v1.user.get_unsupported');
     res.status(405).end();
 });
 router.put("/user", async (req, res) => {
+    client.increment('api.v1.user.put_unsupported');
     res.status(405).end();
 });
-
 module.exports = router;
