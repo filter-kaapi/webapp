@@ -31,7 +31,6 @@ const UserProfilePic = sequelize.define('UserProfilePic', {
         allowNull: false,
         validate: {
             notEmpty: true,
-            isUrl: true
         }
     },
     s3_bucket_path: {
@@ -56,9 +55,9 @@ const UserProfilePic = sequelize.define('UserProfilePic', {
         }
     },
     upload_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false,
-        defaultValue: DataTypes.NOW
+        // defaultValue: "2024-10-29"
     }
 }, {
     tableName: process.env.DB_TABLE_NAME_PIC,

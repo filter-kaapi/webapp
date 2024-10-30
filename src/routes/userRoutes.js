@@ -1,53 +1,48 @@
 // This file handles api/v1/user API endpoints.
-// 1. POST /user - public route that takes in a) email b) password c)firstname d)lastname 
-// 2. GET /user/self - Auth route to return respective user details 
+// 1. POST /user - public route that takes in a) email b) password c)firstname d)lastname
+// 2. GET /user/self - Auth route to return respective user details
 // 3. PUT /user/self - Auth route to take in user information and returns respective user details
-
 
 // User: The model representing the user schema in the database.
 // user: The specific instance of the authenticated user that the current request is operating on.
-
 
 const express = require("express");
 const router = express.Router();
 const User = require("../database/models/user");
 const authenticate = require("../middleware/auth");
-const upload = require('../middleware/fileUpload');
-const AWS = require('../aws/awsconfig');
-const s3 = new AWS.S3();
-const path = require('path');
-const UserProfilePic = require('../database/models/userProfilePic'); // Adjust the path as necessary
+const upload = require("../middleware/fileUpload");
+const {
+    DeleteObjectCommand,
+    CreateMultipartUploadCommand,
+} = require("@aws-sdk/client-s3");
+const AWS = require("../aws/awsconfig");
+const path = require("path");
+const UserProfilePic = require("../database/models/userProfilePic");
 
-
-
-// PUBLIC Routes 
+// PUBLIC Routes
 // 1. PSOT /user - Responds with 201 User created and 400 Bad request
 
-
-router.post('/user', async (req, res) => {
+router.post("/user", async (req, res) => {
     if (Object.keys(req.params).length > 0 || Object.keys(req.query).length > 0) {
         return res.status(400).end();
-
     }
 
     const { email, first_name, last_name, password } = req.body;
     if (!email || !first_name || !last_name || !password) {
-        return res.status(400).end()
+        return res.status(400).end();
     }
     if (req.body.password.length <= 5) {
-        console.log("Passsword too short")
-        return res.status(400).end()
+        console.log("Passsword too short");
+        return res.status(400).end();
         // return res.status(400).json({ error: "Password too small" })
-        // Purposefully keeping this error for better ux. NOT. safe zone removing json 
-
-
+        // Purposefully keeping this error for better ux. NOT. safe zone removing json
     }
     try {
         const oldUser = await User.findOne({ where: { email } });
         if (oldUser) {
             console.log("user already exists");
-            res.status(400).end()
-            // User Already Exists 
+            res.status(400).end();
+            // User Already Exists
         }
 
         const newUser = await User.create({
@@ -63,43 +58,39 @@ router.post('/user', async (req, res) => {
             last_name: newUser.last_name,
             email: newUser.email,
             account_created: newUser.account_created,
-            account_updated: newUser.account_updated
-
-        })
+            account_updated: newUser.account_updated,
+        });
     } catch (error) {
-        console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         console.log("---- USER registration CHECK ERROR STARTS----");
-        console.log(error)
-        console.log("~~~~~~~~~USER registration CHECK ERROR ENDS~~~~~~~~~~~~~~")
-        return res.status(400).end()
-
+        console.log(error);
+        console.log("~~~~~~~~~USER registration CHECK ERROR ENDS~~~~~~~~~~~~~~");
+        return res.status(400).end();
     }
 });
-// AUTHENTICATED routes
-// 1. GET /user/self - Responds with 200 OK with all details 
-// 2. PUT /user/self - Responds with 204 and 400 without any details, ignore the email added. 
-// 3. POST /user/self/pic - Responds with 201 Profile Pic Added/Updated with file_name, id, url, upload_date, user_id and 400 BadRequest without any details. 
-// 4. GET /user/self/pic - 200 OK with all details and 404 Not Found
-// 5. DELETE /user/self/pic - 204 (no content) for sucess, 401 for Unauthorized, 404 if not found. 
-router.get('/user/self', authenticate, async (req, res) => {
 
+
+// AUTHENTICATED routes
+// 1. GET /user/self - Responds with 200 OK with all details
+// 2. PUT /user/self - Responds with 204 and 400 without any details, ignore the email added.
+// 3. POST /user/self/pic - Responds with 201 Profile Pic Added/Updated with file_name, id, url, upload_date, user_id and 400 BadRequest without any details.
+// 4. GET /user/self/pic - 200 OK with all details and 404 Not Found
+// 5. DELETE /user/self/pic - 204 (no content) for sucess, 401 for Unauthorized, 404 if not found.
+
+router.get("/user/self", authenticate, async (req, res) => {
     console.log("inside get");
 
     if (req.method == "HEAD") {
-        console.log(req.method)
+        console.log(req.method);
         return res.status(405).end();
-
     }
-    if ((Object.keys(req.query).length > 0) || (Object.keys(req.params).length > 0)) {
+    if (Object.keys(req.query).length > 0 || Object.keys(req.params).length > 0) {
         return res.status(400).end();
     }
-
-
 
     if (Object.keys(req.body).length > 0) {
-        console.log(req.body)
+        console.log(req.body);
         return res.status(400).end();
-
     }
     const user = req.user;
     res.status(200).json({
@@ -112,21 +103,20 @@ router.get('/user/self', authenticate, async (req, res) => {
     });
 });
 
-
-router.put('/user/self', authenticate, async (req, res) => {
+router.put("/user/self", authenticate, async (req, res) => {
     const { email, first_name, last_name, password } = req.body;
 
     const itemsinBody = Object.keys(req.body);
-    console.log("dfdfdfdf" + itemsinBody)
-    let invalidFields = []
+    console.log("dfdfdfdf" + itemsinBody);
+    let invalidFields = [];
     for (let i = 0; i < itemsinBody.length; i++) {
-        const key = itemsinBody[i]
+        const key = itemsinBody[i];
         if (key !== "first_name" && key !== "last_name" && key !== "password") {
             invalidFields.push(key);
         }
     }
     if (invalidFields.length > 0) {
-        console.log(invalidFields.length + "its not zero so sending 400")
+        console.log(invalidFields.length + "its not zero so sending 400");
         return res.status(400).end();
     }
 
@@ -141,124 +131,259 @@ router.put('/user/self', authenticate, async (req, res) => {
 
         console.log(`the user is ${req.user.email}`);
         console.log(`the firstname is ${first_name}`);
-        if (email) { res.status(400).end() }
+        if (email) {
+            res.status(400).end();
+        }
         if (first_name) user.first_name = first_name;
         if (last_name) user.last_name = last_name;
         if (password) user.password = password;
         const result = await user.save();
-        console.log('Save result:', result);
+        console.log("Save result:", result);
         res.status(204).end(); // No content - as per swagger
-    }
-    catch (error) {
-        console.error('Error saving user:', error);
+    } catch (error) {
+        console.error("Error saving user:", error);
         res.status(400).end(); // Bad Request - as per swagger
     }
 });
 
+router.post(
+    "/user/self/pic",
+    authenticate,
+    upload.single("profilePic"),
+    async (req, res) => {
+        try {
+            // Validate file presence
+            const file = req.file;
+            if (!file) {
+                return res.status(400).json({ message: "No file uploaded" });
+            }
+            // Validate file type
+            const fileExtension = path.extname(file.originalname).toLowerCase();
+            const allowedExtensions = [".jpg", ".jpeg", ".png"];
+            if (!allowedExtensions.includes(fileExtension)) {
+                return res.status(400).json({
+                    message:
+                        "Invalid file type. Only JPG, JPEG, and PNG files are allowed",
+                });
+            }
 
-router.post('/user/self/pic', authenticate, upload.single('profilePic'), async (req, res) => {
-    try {
-        console.log("Inside profile pic upload");
+            const user = req.user;
+            console.log("User ID:", user.id);
 
-        const file = req.file;
-        if (!file) {
-            return res.status(400).json({ message: "No file uploaded" });
+            // Check for existing profile picture
+            const existingPic = await UserProfilePic.findOne({
+                where: { user_id: user.id },
+            });
+
+            if (existingPic) {
+                return res.status(400).json({
+                    message: "User already has a profile picture",
+                });
+            }
+
+            // Generate unique file key
+            const fileKey = `profile-pics/${user.id}/${Date.now()}${fileExtension}`;
+
+            // Prepare upload parameters
+            const uploadParams = {
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: fileKey,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+                Metadata: {
+                    userId: user.id.toString(),
+                    originalName: file.originalname,
+                    uploadDate: new Date().toISOString()
+                },
+            };
+            const command = new CreateMultipartUploadCommand(uploadParams);
+            const s3response = await AWS.send(command);
+
+            console.log("S3 Upload Response:", s3response);
+
+            // Create database record
+            const newPic = await UserProfilePic.create({
+                file_name: file.originalname,
+                user_id: user.id,
+                url: fileKey,
+                upload_date: new Date().toISOString(),
+                s3_bucket_path: fileKey,
+                file_size: file.size,
+                content_type: file.mimetype,
+            });
+            console.log(newPic.upload_date)
+            formattedDateup = newPic.upload_date.toISOString().slice(0, 10);
+            // Return success response
+            res.status(201).json({
+                file_name: newPic.file_name,
+
+                id: newPic.id,
+                url: newPic.url,
+                upload_date: formattedDateup,
+                user_id: newPic.user_id,
+            });
+        } catch (error) {
+            console.error("Error uploading to S3:", error);
+            return res.status(500).json({
+                message: "Error uploading to S3",
+                error: error.message,
+            });
         }
+    }
+);
 
-        const fileExtension = path.extname(file.originalname);
-        console.log("File extension:", fileExtension);
-
+router.delete("/user/self/pic", authenticate, async (req, res) => {
+    try {
         const user = req.user;
         console.log("User ID:", user.id);
 
-        const fileKey = `profile-pics/${user.id}/${Date.now()}${fileExtension}`;
-
-        const s3 = new AWS.S3();
-        const params = {
-            Bucket: process.env.S3_BUCKET_NAME,
-            Key: fileKey,
-            Body: file.buffer,
-            ContentType: file.mimetype,
-            Metadata: {
-                userId: user.id.toString(),
-            },
-        };
-
-        const existingPic = await UserProfilePic.findOne({ where: { user_id: user.id } });
-        if (existingPic) {
-            return res.status(400).json({ message: "User already has a profile picture" });
-        }
-
-        const s3Response = await s3.upload(params).promise();
-        console.log("S3 Upload Response:", s3Response);
-
-        const newPic = await UserProfilePic.create({
-            file_name: file.originalname,
-            user_id: user.id,
-            url: s3Response.Location,
-            upload_date: new Date(),
-            s3_key: fileKey,
+        // Check if user has an existing profile picture
+        const existingPic = await UserProfilePic.findOne({
+            where: { user_id: user.id },
         });
 
-        res.status(201).json(newPic);
+        if (!existingPic) {
+            return res.status(404).json({
+                message: "Profile picture not found",
+            });
+        }
+
+        // Check if the picture belongs to the authenticated user
+        if (existingPic.user_id !== user.id) {
+            return res.status(403).json({
+                message: "Unauthorized to delete this profile picture",
+            });
+        }
+
+        // Delete the image from S3
+
+        const deleteParams = {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: existingPic.s3_bucket_path, // Path to the image in S3
+        };
+        const command = new DeleteObjectCommand(deleteParams);
+        const response = await AWS.send(command);
+
+        console.log("S3 Image deleted:", existingPic.s3_bucket_path + response);
+
+        // Delete the database record (hard delete)
+        await existingPic.destroy();
+
+        // Return success response
+        res.status(200).json({
+            message: "Profile picture deleted successfully",
+        });
     } catch (error) {
-        console.error("Error uploading to S3:", error);
-        return res.status(500).json({ message: "Error uploading to S3", error: error.message });
+        console.error("Error deleting profile picture:", error);
+        return res.status(500).json({
+            message: "Error deleting profile picture",
+            error: error.message,
+        });
     }
 });
+
+router.get(
+    "/user/self/pic",
+    authenticate,
+    async (req, res) => {
+        try {
+            // Validate file presence
+
+
+            const user = req.user;
+            console.log("User ID:", user.id);
+
+            // Check for existing profile picture
+            const Pic = await UserProfilePic.findOne({
+                where: { user_id: user.id },
+            });
+
+
+            // Create database record
+            // const newPic = await UserProfilePic.findAll({
+            //     file_name: file.originalname,
+            //     user_id: user.id,
+            //     url: fileKey,
+            //     upload_date: new Date(),
+            //     s3_bucket_path: fileKey,
+            //     file_size: file.size,
+            //     content_type: file.mimetype,
+            // });
+
+            if (Pic) {
+                const uploadDate = Pic.upload_date;
+                formattedDate = uploadDate.toISOString().slice(0, 10);
+                res.status(201).json({
+                    file_name: Pic.file_name,
+                    id: Pic.id,
+                    url: Pic.url,
+                    upload_date: formattedDate,
+                    user_id: Pic.user_id,
+                });
+            }
+            else {
+                res.status(404).end();
+            }
+
+
+
+        } catch (error) {
+            console.error("Error finding image:", error);
+            return res.status(500).json({
+                message: "Error finding image in S3",
+                error: error.message,
+            });
+        }
+    }
+);
+
 // NOT_SUPPORTED ROUTES for /user/self - Respond with 405
-// 1. DELETE 
+// 1. DELETE
 // 2. HEAD
-// 3. OPTIONS 
+// 3. OPTIONS
 // 4. PATCH
 
-router.delete('/user/self', async (req, res) => {
-    res.status(405).end()
+router.delete("/user/self", async (req, res) => {
+    res.status(405).end();
 });
-router.head('/user/self', async (req, res) => {
-    res.status(405).end()
+router.head("/user/self", async (req, res) => {
+    res.status(405).end();
 });
-router.options('/user/self', async (req, res) => {
-    res.status(405).end()
+router.options("/user/self", async (req, res) => {
+    res.status(405).end();
 });
-router.patch('/user/self', async (req, res) => {
-    res.status(405).end()
+router.patch("/user/self", async (req, res) => {
+    res.status(405).end();
 });
-router.post('/user/self', async (req, res) => {
-    res.status(405).end()
+router.post("/user/self", async (req, res) => {
+    res.status(405).end();
 });
-
-
 
 // NOT_SUPPORTED ROUTES for /user - Respond with 405
-// 1. DELETE 
+// 1. DELETE
 // 2. HEAD
-// 3. OPTIONS 
+// 3. OPTIONS
 // 4. PATCH
 // 5. GET
 // 6. PUT
 
-
-router.delete('/user', async (req, res) => {
-    res.status(405).end()
+router.delete("/user", async (req, res) => {
+    res.status(405).end();
 });
-router.head('/user', async (req, res) => {
-    res.status(405).end()
+router.head("/user", async (req, res) => {
+    res.status(405).end();
 });
-router.options('/user', async (req, res) => {
-    res.status(405).end()
+router.options("/user", async (req, res) => {
+    res.status(405).end();
 });
-router.patch('/user', async (req, res) => {
-    res.status(405).end()
+router.patch("/user", async (req, res) => {
+    res.status(405).end();
 });
-router.get('/user', async (req, res) => {
-    res.status(405).end()
+router.get("/user", async (req, res) => {
+    res.status(405).end();
 });
-router.put('/user', async (req, res) => {
-    res.status(405).end()
+router.put("/user", async (req, res) => {
+    res.status(405).end();
 });
-
-
-
 
 module.exports = router;
