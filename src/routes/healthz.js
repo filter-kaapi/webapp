@@ -6,10 +6,12 @@
 const express = require("express");
 const router = express.Router();
 const sequelize = require("../database/sequelize");
+const client = require('../../metrics/metrics');
 
 router
   .get("/", async (req, res) => {
-
+    client.increment('api.healthz');
+    const start = Date.now();
     try {
       if (req.method == "HEAD") {
         console.log(req.method)
@@ -29,12 +31,14 @@ router
           .end();
       }
       await sequelize.authenticate();
-
+      client.timing('api.user.get_self.response_time', Date.now() - start);  // Track response time
       res
         .set("Cache-Control", "no-cache, no-store, must-revalidate")
         .set("Pragma", "no-cache")
         .status(200)
         .end();
+
+
     } catch (error) {
       console.log("---- HEALTH CHECK ERROR STARTS----");
       console.error("Health check failed:", error.message);

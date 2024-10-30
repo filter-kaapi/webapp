@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 require('dotenv').config();
+const client = require('../metrics/metrics.js');
 
 
 const PORT = process.env.PORT;
@@ -16,6 +17,18 @@ app.use((req, res, next) => {
   res.setHeader('Pragma', 'no-cache');
   next();
 });
+
+app.use((req, res, next) => {
+  client.increment(`api.${req.method}.${req.originalUrl.replace(/\//g, '.')}`);
+  const start = Date.now();
+
+  res.on('finish', () => {
+    client.timing(`response_time.${req.method}.${req.originalUrl.replace(/\//g, '.')}`, Date.now() - start);
+  });
+
+  next();
+});
+
 
 
 app.use("/healthz", healthzRoute);
