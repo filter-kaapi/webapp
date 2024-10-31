@@ -55,6 +55,7 @@ jobs:
           echo "PORT=${{ secrets.PORT }}" >> .env
           echo "DB_TABLE_NAME=${{ secrets.DB_TABLE_NAME }}" >> .env
           echo "DB_SCHEMA=${{ secrets.DB_SCHEMA }}" >> .env
+          echo "DB_TABLE_NAME_PIC=${{ secrets.DB_TABLE_NAME_PIC }}" >> .env
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

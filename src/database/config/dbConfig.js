@@ -1,6 +1,6 @@
 //This file contains the database configuration
 // that will be used my sequelize during initalisaiton.
-// Secrets are stored in the .env file 
+// Secrets are stored in the .env file s
 require('dotenv').config();
 
 module.exports = {

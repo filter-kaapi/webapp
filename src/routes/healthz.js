@@ -6,7 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const sequelize = require("../database/sequelize");
-const client = require('../../metrics/metrics');
+const client = require('../metrics/metrics');
 
 router
   .get("/", async (req, res) => {
