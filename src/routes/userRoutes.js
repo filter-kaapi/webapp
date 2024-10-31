@@ -18,7 +18,7 @@ const {
 const AWS = require("../aws/awsconfig");
 const path = require("path");
 const UserProfilePic = require("../database/models/userProfilePic");
-const client = require("../../metrics/metrics")
+const client = require("../metrics/metrics")
 // PUBLIC Routes
 // 1. PSOT /user - Responds with 201 User created and 400 Bad request
 
