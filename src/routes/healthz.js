@@ -6,7 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const client = require('../metrics/metrics');
-const { connectToDatabase, sequelize } = require('./database/sequelize.js');
+const { connectToDatabase, sequelize } = require('../database/sequelize');
 
 
 router
