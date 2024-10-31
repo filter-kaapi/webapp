@@ -15,6 +15,8 @@ const upload = require("../middleware/fileUpload");
 const {
     DeleteObjectCommand,
     CreateMultipartUploadCommand,
+    PutObjectCommand,
+    GetObjectCommand,
 } = require("@aws-sdk/client-s3");
 const AWS = require("../aws/awsconfig");
 const path = require("path");
