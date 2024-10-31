@@ -220,7 +220,7 @@ router.post("/user/self/pic", authenticate, upload.single("profilePic"), async (
             content_type: file.mimetype,
         });
         console.log(newPic.upload_date)
-        formattedDateup = newPic.upload_date.toISOString().slice(0, 10);
+        formattedDateup = newPic.upload_date;
         // Return success response
         client.timing('api.v1.user.self.post_pic.response_time', Date.now() - start);  // Track response time
         res.status(201).json({
