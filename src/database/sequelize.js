@@ -1,6 +1,7 @@
 const { Sequelize } = require('sequelize');
 const config = require('./config/dbConfig.js');
-
+const User = require('../database/models/user.js');
+const UserProfilePic = require('../database/models/userProfilePic');
 
 const env = process.env.NODE_ENV || 'development';
 
@@ -9,8 +10,7 @@ if (!dbConfig) {
     throw new Error(`No configuration found for environment: ${env}`);
 }
 
-const User = require('./models/User');
-const UserProfilePic = require('./models/userProfilePic');
+
 
 
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
