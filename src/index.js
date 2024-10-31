@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 require('dotenv').config();
-const client = require('../metrics/metrics.js');
+const client = require('./metrics/metrics.js');
 
 
 const PORT = process.env.PORT;

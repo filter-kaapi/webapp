@@ -32,9 +32,4 @@ sudo apt-get install -y nodejs
 echo "Installing unzip"
 sudo apt install -y unzip
 
-echo "Installing CloudWatch Agent"
-wget -O /tmp/amazon-cloudwatch-agent.deb https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-sudo dpkg -i /tmp/amazon-cloudwatch-agent.deb
-sudo rm /tmp/amazon-cloudwatch-agent.deb
-
 echo "Installation completed."
