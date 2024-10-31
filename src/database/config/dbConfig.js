@@ -14,13 +14,13 @@ module.exports = {
         schema: process.env.DB_SCHEMA
     },
     test: {
-        username: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        host: process.env.DB_HOST,
+        username: process.env.DB_USER || 'runner',
+        password: process.env.DB_PASSWORD || 'runner',
+        database: process.env.DB_NAME || 'postgres',
+        host: process.env.DB_HOST || 'localhost',
         dialect: 'postgres',
-        port: process.env.DB_PORT,
-        schema: process.env.DB_SCHEMA
+        port: process.env.DB_PORT || 5432,
+        schema: process.env.DB_SCHEMA || 'public'
     },
     production: {
         username: process.env.DB_USER,
