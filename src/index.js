@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 require('dotenv').config();
+const { connectToDatabase, sequelize } = require('./database/sequelize.js');
+
 const client = require('./metrics/metrics.js');
 
 
@@ -32,28 +34,33 @@ app.use((req, res, next) => {
 
 
 app.use("/healthz", healthzRoute);
-
-
-
 app.use("/v1", userRoute);
 
-// Middleware written to capture routse not written above
-// Keep app.use at the end of all routes. 
-// app.use((req, res) => {
-//   res
-//     .status(404)
-//     .set("Cache-Control", "no-cache, no-store, must-revalidate")
-//     .set("Pragma", "no-cache")
-//     .end()
-// });
 
-// app.listen(PORT, () => {
-//   console.log(`The Server is running on port https://localhost:${PORT}`);
-// });
 
+// Database connection and server startup
+const startServer = async () => {
+  try {
+    // Connect to database first
+    await connectToDatabase();
+
+    // Test the database connection
+    await sequelize.authenticate();
+    console.log('Database connection established successfully.');
+
+    // Only start the server if not in test environment
+    if (process.env.NODE_ENV !== 'test') {
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    }
+  } catch (error) {
+    console.error('Failed to start the server:', error);
+    process.exit(1);
+  }
+};
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  startServer();
 }
+
 module.exports = app;

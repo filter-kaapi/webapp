@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
-const User = require('../database/models/user');
+const { models } = require('../database/sequelize');
+const User = models.User;
 
 async function authenticate(req, res, next) {
   const authHeader = req.headers['authorization'];

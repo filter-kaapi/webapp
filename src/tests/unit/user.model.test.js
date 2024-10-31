@@ -1,23 +1,27 @@
 // tests/unit/user.model.test.js
-const User = require('../../database/models/user.js');
+const { models, sequelize, connectToDatabase, closeDatabaseConnection } = require('../../database/sequelize');
+const User = models.User;
 const bcrypt = require('bcrypt');
-const sequelize = require('../../database/sequelize.js');
 
 describe('User Model', () => {
     beforeAll(async () => {
-        await sequelize.authenticate();
+        await connectToDatabase();
         await sequelize.sync({ force: true });
     });
 
     afterAll(async () => {
-        await sequelize.close();
+        await closeDatabaseConnection();
     });
     // beforeEach(async () => {
     //     await sequelize.sync({ force: true });
     // });
 
     afterEach(async () => {
-        await User.destroy({ where: {}, truncate: true });
+        await User.destroy({
+            where: {},
+            truncate: true,
+            cascade: true
+        });
     });
 
     it('should create a user successfully', async () => {

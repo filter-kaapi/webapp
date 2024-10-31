@@ -8,7 +8,8 @@
 
 const express = require("express");
 const router = express.Router();
-const User = require("../database/models/user");
+const { models } = require('../database/sequelize');
+const User = models.User;
 const authenticate = require("../middleware/auth");
 const upload = require("../middleware/fileUpload");
 const {
