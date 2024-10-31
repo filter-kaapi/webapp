@@ -1,4 +1,4 @@
-const sequelize = require('../database/sequelize');
+const { models, sequelize, connectToDatabase, closeDatabaseConnection } = require('../database/sequelize');
 
 if (!process.env.GITHUB_ACTIONS) {
     if (process.env.NODE_ENV === 'test') {
@@ -14,7 +14,7 @@ if (!process.env.GITHUB_ACTIONS) {
 
 beforeAll(async () => {
     try {
-        await sequelize.authenticate();
+        await connectToDatabase();
         await sequelize.sync({ force: true });
     } catch (error) {
         console.error('Database setup failed:', error);
@@ -32,5 +32,5 @@ beforeAll(async () => {
 // });
 
 afterAll(async () => {
-    await sequelize.close();
+    await closeDatabaseConnection();
 });

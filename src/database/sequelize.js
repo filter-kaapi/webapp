@@ -1,12 +1,16 @@
 const { Sequelize } = require('sequelize');
 const config = require('./config/dbConfig.js');
 
+
 const env = process.env.NODE_ENV || 'development';
 
 const dbConfig = config[env];
 if (!dbConfig) {
     throw new Error(`No configuration found for environment: ${env}`);
 }
+
+const User = require('./models/User');
+const UserProfilePic = require('./models/userProfilePic');
 
 
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
@@ -18,6 +22,18 @@ const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.p
     logging: console.log
 
 })
+
+const models = {
+    User: User.init(sequelize),
+    UserProfilePic: UserProfilePic.init(sequelize)
+};
+
+// Add associations
+Object.values(models)
+    .filter(model => typeof model.associate === "function")
+    .forEach(model => model.associate(models));
+
+
 const connectToDatabase = async () => {
     try {
         console.log('Attempting to connect with config:', {
@@ -54,5 +70,19 @@ const connectToDatabase = async () => {
         console.log("***************************");
     }
 };
-connectToDatabase();
-module.exports = sequelize;
+
+const closeDatabaseConnection = async () => {
+    try {
+        await sequelize.close();
+        console.log("Database connection closed successfully.");
+    } catch (error) {
+        console.error('Error closing the database connection:', error);
+    }
+};
+
+// connectToDatabase();
+module.exports = {
+    sequelize, models,
+    connectToDatabase,
+    closeDatabaseConnection
+};
