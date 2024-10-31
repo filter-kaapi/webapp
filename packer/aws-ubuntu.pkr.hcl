@@ -67,12 +67,6 @@ build {
     source      = "packer/csye6225.service"
     destination = "/tmp/csye6225.service"
   }
-  # Upload the CloudWatch configuration file
-  provisioner "file" {
-    source      = "packer/cloudwatch-config.json"
-    destination = "/tmp/amazon-cloudwatch-agent.json"
-  }
-
   # Run the CloudWatch setup script
   provisioner "shell" {
     script = "packer/setup-cloudwatch.sh"
