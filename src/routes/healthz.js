@@ -5,8 +5,9 @@
 
 const express = require("express");
 const router = express.Router();
-const sequelize = require("../database/sequelize");
 const client = require('../metrics/metrics');
+const { connectToDatabase, sequelize } = require('./database/sequelize.js');
+
 
 router
   .get("/", async (req, res) => {
@@ -30,7 +31,7 @@ router
           .set("Pragma", "no-cache")
           .end();
       }
-      await sequelize.authenticate();
+      await connectToDatabase();
       client.timing('api.user.get_self.response_time', Date.now() - start);  // Track response time
       res
         .set("Cache-Control", "no-cache, no-store, must-revalidate")
