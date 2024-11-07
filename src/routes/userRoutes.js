@@ -204,7 +204,7 @@ router.post("/user/self/pic", authenticate, upload.single("profilePic"), async (
                 uploadDate: new Date().toISOString()
             },
         };
-        const command = new CreateMultipartUploadCommand(uploadParams);
+        const command = new PutObjectCommand(uploadParams);
         const s3response = await AWS.send(command);
 
         console.log("S3 Upload Response:", s3response);
