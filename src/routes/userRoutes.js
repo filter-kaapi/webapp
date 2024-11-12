@@ -295,13 +295,13 @@ router.get("/user/self/pic", authenticate, async (req, res) => {
 
         if (Pic) {
             const uploadDate = Pic.upload_date;
-            formattedDate = uploadDate.toISOString().slice(0, 10);
+            // formattedDate = uploadDate.toISOString().slice(0, 10);
             client.timing('api.v1.user.self.get_pic.response_time', Date.now() - start);  // Track response time
             res.status(201).json({
                 file_name: Pic.file_name,
                 id: Pic.id,
                 url: Pic.url,
-                upload_date: formattedDate,
+                upload_date: uploadDate,
                 user_id: Pic.user_id,
             });
         }
