@@ -18,12 +18,26 @@ const {
     PutObjectCommand,
     GetObjectCommand,
 } = require("@aws-sdk/client-s3");
-const AWS = require("../aws/awsconfig");
+const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
 const path = require("path");
 const UserProfilePic = require("../database/models/userProfilePic");
 const client = require("../metrics/metrics")
+const snsTopicArn = process.env.SNS_TOPIC_ARN;
+
+
+function verificationhexcode(length) {
+    let result = '';
+    const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
+
+
+
 // PUBLIC Routes
-// 1. PSOT /user - Responds with 201 User created and 400 Bad request
+// 1. POST /user - Responds with 201 User created and 400 Bad request
 
 router.post("/user", async (req, res) => {
     client.increment('api.v1.user.post');  // Increment call count for POST /user
@@ -51,14 +65,19 @@ router.post("/user", async (req, res) => {
             res.status(400).end();
             // User Already Exists
         }
+        const hexCode = verificationhexcode(8); // Generate a 6-character hex code
+        console.log(hexCode + "from console");
 
         const newUser = await User.create({
             email: req.body.email,
             first_name: req.body.first_name,
             last_name: req.body.last_name,
             password: req.body.password,
+            verification_string: hexCode
         });
         console.log(newUser.toJSON());
+        console.log(newUser.verification_string + "from newUser")
+        console.log(newUser.registration_time + "registration time")
         client.timing('api.user.post.response_time', Date.now() - start);  // Track response time
         return res.status(201).json({
             id: newUser.id,
@@ -295,13 +314,13 @@ router.get("/user/self/pic", authenticate, async (req, res) => {
 
         if (Pic) {
             const uploadDate = Pic.upload_date;
-            formattedDate = uploadDate.toISOString().slice(0, 10);
+            // formattedDate = uploadDate.toISOString().slice(0, 10);
             client.timing('api.v1.user.self.get_pic.response_time', Date.now() - start);  // Track response time
             res.status(201).json({
                 file_name: Pic.file_name,
                 id: Pic.id,
                 url: Pic.url,
-                upload_date: formattedDate,
+                upload_date: uploadDate,
                 user_id: Pic.user_id,
             });
         }
