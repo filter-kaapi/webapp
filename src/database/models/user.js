@@ -40,6 +40,20 @@ class User extends Model {
                 type: DataTypes.STRING,
                 allowNull: false,
             },
+            verification_string: {
+                type: DataTypes.STRING,
+                allowNull: true,
+                unique: true,
+            },
+            is_verified: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+            },
+            registration_time: {
+                type: DataTypes.DATEONLY,
+                defaultValue: DataTypes.NOW,
+            }
         }, {
             sequelize,
             modelName: 'User',
