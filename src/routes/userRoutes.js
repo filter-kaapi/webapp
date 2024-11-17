@@ -8,7 +8,7 @@
 
 const express = require("express");
 const { Op } = require('sequelize');
-
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const { models } = require('../database/sequelize');
 const User = models.User;
@@ -26,6 +26,7 @@ const UserProfilePic = require("../database/models/userProfilePic");
 const client = require("../metrics/metrics")
 const snsTopicArn = process.env.SNS_TOPIC_ARN;
 
+const snsClient = new SNSClient({ region: process.env.AWS_REGION });
 
 // function verificationhexcode(length) {
 //     let result = '';
@@ -102,7 +103,7 @@ router.post("/user", async (req, res) => {
 
         console.log(newUser.toJSON());
         console.log(newUser.verification_string + "from newUser")
-        console.log(newUser.registration_time + "registration time")
+        console.log(newUser.verification_string_expiration + "registration time")
         client.timing('api.user.post.response_time', Date.now() - start);  // Track response time
         return res.status(201).json({
             id: newUser.id,
