@@ -50,10 +50,11 @@ class User extends Model {
                 allowNull: false,
                 defaultValue: false,
             },
-            registration_time: {
-                type: DataTypes.DATEONLY,
-                defaultValue: DataTypes.NOW,
+            verification_string_expiration: {
+                type: DataTypes.DATE,
+                allowNull: true,
             }
+
         }, {
             sequelize,
             modelName: 'User',
@@ -80,6 +81,12 @@ class User extends Model {
             updatedAt: 'account_updated',
             timestamps: true,
             schema: process.env.DB_SCHEMA,
+            indexes: [
+                {
+                    unique: false,
+                    fields: ['verification_string']
+                }
+            ],
         });
     }
 

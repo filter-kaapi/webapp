@@ -7,6 +7,8 @@
 // user: The specific instance of the authenticated user that the current request is operating on.
 
 const express = require("express");
+const { Op } = require('sequelize');
+
 const router = express.Router();
 const { models } = require('../database/sequelize');
 const User = models.User;
@@ -25,14 +27,14 @@ const client = require("../metrics/metrics")
 const snsTopicArn = process.env.SNS_TOPIC_ARN;
 
 
-function verificationhexcode(length) {
-    let result = '';
-    const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
-}
+// function verificationhexcode(length) {
+//     let result = '';
+//     const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+//     for (let i = 0; i < length; i++) {
+//         result += characters.charAt(Math.floor(Math.random() * characters.length));
+//     }
+//     return result;
+// }
 
 
 
@@ -65,16 +67,39 @@ router.post("/user", async (req, res) => {
             res.status(400).end();
             // User Already Exists
         }
-        const hexCode = verificationhexcode(8); // Generate a 6-character hex code
-        console.log(hexCode + "from console");
+        // const hexCode = verificationhexcode(8); // Generate a 6-character hex code
+        // console.log(hexCode + "from console");
+        const verificationToken = uuidv4();
+        const tokenExpiration = new Date(Date.now() + 2 * 60 * 1000); // 24 hours from now
 
         const newUser = await User.create({
             email: req.body.email,
             first_name: req.body.first_name,
             last_name: req.body.last_name,
             password: req.body.password,
-            verification_string: hexCode
+            verification_string: verificationToken,
+            verification_string_expiration: tokenExpiration,
+            is_verified: false
         });
+
+
+
+        const snsPayload = {
+            email: newUser.email,
+            first_name: newUser.first_name,
+            last_name: newUser.last_name,
+            verification_token: verificationToken,
+            verification_string_expiration: tokenExpiration.toISOString()
+        };
+
+        const snsCommand = new PublishCommand({
+            TopicArn: snsTopicArn,
+            Message: JSON.stringify(snsPayload),
+            Subject: "User Verification",
+        });
+
+        await snsClient.send(snsCommand);
+
         console.log(newUser.toJSON());
         console.log(newUser.verification_string + "from newUser")
         console.log(newUser.registration_time + "registration time")
@@ -96,6 +121,43 @@ router.post("/user", async (req, res) => {
     }
 });
 
+router.get('/verify', async (req, res) => {
+    try {
+        const { token } = req.query;
+
+        if (!token) {
+            return res.status(400).json({ error: 'Verification token is required' });
+        }
+
+        const now = new Date();
+
+        // Perform a single database operation
+        const [updatedRows] = await User.update(
+            {
+                is_verified: true,
+                verification_string: null,
+                verification_string_expiration: null
+            },
+            {
+                where: {
+                    verification_string: token,
+                    verification_string_expiration: { [Op.gt]: now },
+                    is_verified: false
+                }
+            }
+        );
+
+        if (updatedRows === 0) {
+            // Generic error message to prevent information disclosure
+            return res.status(400).json({ error: 'Invalid verification link' });
+        }
+
+        return res.status(200).json({ message: 'Account successfully verified' });
+    } catch (error) {
+        console.error('Error verifying user:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 // AUTHENTICATED routes
 // 1. GET /user/self - Responds with 200 OK with all details
