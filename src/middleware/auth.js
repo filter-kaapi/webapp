@@ -31,6 +31,7 @@ async function authenticate(req, res, next) {
   }
 
   try {
+    const verificationstatus = await User.findOne({ where })
     const user = await User.findOne({ where: { email } });
     if (!user) {
       // console.log('User not found');
@@ -46,6 +47,12 @@ async function authenticate(req, res, next) {
       return res.status(401).end();
     }
     //TODO: remove json
+
+    if (!user.is_verified) {
+      // console.log('User not verified');
+      return res.status(403).end();
+    }
+
     req.user = user;
     // console.log("line before next() moving to the next htinguy");
     next();

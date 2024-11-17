@@ -117,8 +117,8 @@ jobs:
                        packer/aws-ubuntu.pkr.hcl
       - name: Run Packer Build Demo
         run: |
-          packer build -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
-                       -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
+          packer build -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }} \
+                       -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO}} \
                        -var aws_region=${{ secrets.AWS_REGION }} \
                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
                        packer/aws-ubuntu.pkr.hcl
@@ -133,7 +133,7 @@ jobs:
       - name: Update the Launch Template with latest AMI ID
         run: |
           aws ec2 create-launch-template-version \
-            --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
+            --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME }}" \
             --source-version '$Latest' \
             --version-description "New version with AMI ${{ steps.get_ami.outputs.AMI_ID }}" \
             --launch-template-data '{"ImageId":"'"${{ steps.get_ami.outputs.AMI_ID }}"'"}'
@@ -142,14 +142,14 @@ jobs:
       - name: Update AutoScaling Group to use latest Launch Template version
         run: |
           aws autoscaling update-auto-scaling-group \
-            --auto-scaling-group-name "${{ secrets.AUTOSCALING_GROUP_NAME }}" \
-            --launch-template "LaunchTemplateName=${{ secrets.LAUNCH_TEMPLATE_NAME }},Version='$Latest'"
+            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME }}" \
+            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME }},Version='$Latest'"
         shell: bash
       - name: Start Instance Refresh
         id: instance_refresh
         run: |
           INSTANCE_REFRESH_ID=$(aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name "${{ secrets.AUTOSCALING_GROUP_NAME }}" \
+            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME }}" \
             --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}' \
             --query "InstanceRefreshId" --output text)
           echo "INSTANCE_REFRESH_ID=$INSTANCE_REFRESH_ID" >> $GITHUB_OUTPUT
