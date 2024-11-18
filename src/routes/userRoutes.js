@@ -99,7 +99,9 @@ router.post("/user", async (req, res) => {
             Subject: "User Verification",
         });
 
-        await snsClient.send(snsCommand);
+        const response = await snsClient.send(snsCommand);
+        console.log('Successfully published to SNS:', response.MessageId);
+
 
         console.log(newUser.toJSON());
         console.log(newUser.verification_string + "from newUser")
@@ -125,14 +127,13 @@ router.post("/user", async (req, res) => {
 router.get('/verify', async (req, res) => {
     try {
         const { token } = req.query;
-
+        console.log(token + "fromverification")
         if (!token) {
             return res.status(400).json({ error: 'Verification token is required' });
         }
 
         const now = new Date();
 
-        // Perform a single database operation
         const [updatedRows] = await User.update(
             {
                 is_verified: true,
@@ -149,14 +150,13 @@ router.get('/verify', async (req, res) => {
         );
 
         if (updatedRows === 0) {
-            // Generic error message to prevent information disclosure
-            return res.status(400).json({ error: 'Invalid verification link' });
+            return res.status(410).end();
         }
 
         return res.status(200).json({ message: 'Account successfully verified' });
     } catch (error) {
         console.error('Error verifying user:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(400).end()
     }
 });
 

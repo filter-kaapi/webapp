@@ -108,49 +108,114 @@ jobs:
                           -var instance_type=${{ secrets.INSTANCE_TYPE }} \
                           packer/aws-ubuntu.pkr.hcl
 
-      - name: Run Packer Build
+      - name: Run Packer Build Dev
+        id: packer_build_dev
         run: |
           packer build -machine-readable -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
                        -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
                        -var aws_region=${{ secrets.AWS_REGION }} \
                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                       packer/aws-ubuntu.pkr.hcl
+                       packer/aws-ubuntu.pkr.hcl | tee packer_output.log
+        working-directory: packer
+
+      - name: Extract the AMI ID Dev
+        id: get_ami_dev
+        run: |
+          AMI_ID=$(grep -m1 'artifact,0,id' packer_output.log | cut -d, -f6 | cut -d: -f2)
+              echo "AMI_ID=$AMI_ID"
+                         echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Update AWS Resources for Dev
+        run: |
+          aws ec2 create-launch-template-version \
+            --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }}" \
+            --source-version '$Latest' \
+            --version-description "New version with AMI ${{ steps.get_ami_dev.outputs.AMI_ID }}" \
+            --launch-template-data '{"ImageId":"'"${{ steps.get_ami_dev.outputs.AMI_ID }}"'"}'
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
+            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }},Version='$Latest'"
+        shell: bash
+
+      - name: Start Instance Refresh for Dev
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
+            --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}'
+        shell: bash
+
+      - name: Wait for Instance Refresh to Complete for Dev
+        id: wait_instance_refresh_dev
+        run: |
+          INSTANCE_REFRESH_ID=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" --query 'InstanceRefreshes[0].InstanceRefreshId' --output text)
+          while true; do
+            STATUS=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" --query 'InstanceRefreshes[?InstanceRefreshId==`'$INSTANCE_REFRESH_ID'`].Status' --output text)
+            echo "Current status: $STATUS"
+            if [ "$STATUS" == "Successful" ]; then
+              echo "Instance refresh completed successfully."
+              exit 0
+            elif [ "$STATUS" == "Failed" ]; then
+              echo "Instance refresh failed."
+              exit 1
+            else
+              echo "Waiting for instance refresh to complete..."
+              sleep 30
+            fi
+          done
+        shell: bash
+
       - name: Run Packer Build Demo
+        id: packer_build_demo
         run: |
           packer build -machine-readable -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }} \
                        -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO}} \
                        -var aws_region=${{ secrets.AWS_REGION }} \
                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                       packer/aws-ubuntu.pkr.hcl
-      - name: Extract the AMI ID
-        id: get_ami
-        run: |
-          AMI_ID=$(cat packer/manifest.json | jq -r '.builds[-1].artifact_id' | cut -d ':' -f2)
-          echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
-        shell: bash
-        working-directory: packer
+                       packer/aws-ubuntu.pkr.hcl | tee packer_output_demo.log
 
-      - name: Update the Launch Template with latest AMI ID
+      - name: Extract the AMI ID Demo
+        id: get_ami_demo
+        run: |
+          AMI_ID=$(grep -m1 'artifact,0,id' packer_output_demo.log | cut -d, -f6 | cut -d: -f2)
+              echo "AMI_ID=$AMI_ID"
+                         echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Update AWS Resources for Demo
         run: |
           aws ec2 create-launch-template-version \
-            --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME }}" \
+            --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }}" \
             --source-version '$Latest' \
-            --version-description "New version with AMI ${{ steps.get_ami.outputs.AMI_ID }}" \
-            --launch-template-data '{"ImageId":"'"${{ steps.get_ami.outputs.AMI_ID }}"'"}'
+            --version-description "New version with AMI ${{ steps.get_ami_demo.outputs.AMI_ID }}" \
+            --launch-template-data '{"ImageId":"'"${{ steps.get_ami_deemo.outputs.AMI_ID }}"'"}'
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" \
+            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }},Version='$Latest'"
         shell: bash
 
-      - name: Update AutoScaling Group to use latest Launch Template version
+      - name: Start Instance Refresh for Demo
         run: |
-          aws autoscaling update-auto-scaling-group \
-            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME }}" \
-            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME }},Version='$Latest'"
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" \
+            --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}'
         shell: bash
-      - name: Start Instance Refresh
-        id: instance_refresh
+      - name: Wait for Instance Refresh to Complete for Demo
+        id: wait_instance_refresh_demo
         run: |
-          INSTANCE_REFRESH_ID=$(aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME }}" \
-            --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}' \
-            --query "InstanceRefreshId" --output text)
-          echo "INSTANCE_REFRESH_ID=$INSTANCE_REFRESH_ID" >> $GITHUB_OUTPUT
+          INSTANCE_REFRESH_ID=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" --query 'InstanceRefreshes[0].InstanceRefreshId' --output text)
+          while true; do
+            STATUS=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" --query 'InstanceRefreshes[?InstanceRefreshId==`'$INSTANCE_REFRESH_ID'`].Status' --output text)
+            echo "Current status: $STATUS"
+            if [ "$STATUS" == "Successful" ]; then
+              echo "Instance refresh completed successfully."
+              exit 0
+            elif [ "$STATUS" == "Failed" ]; then
+              echo "Instance refresh failed."
+              exit 1
+            else
+              echo "Waiting for instance refresh to complete..."
+              sleep 30
+            fi
+          done
         shell: bash
