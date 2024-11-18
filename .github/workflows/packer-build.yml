@@ -128,16 +128,22 @@ jobs:
 
       - name: Update AWS Launch template for Dev
         run: |
+          LATEST_VERSION=$(aws ec2 describe-launch-templates \
+            --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }}" \
+            --query 'LaunchTemplates[0].LatestVersionNumber' \
+            --output text)
+
+          echo "Latest Launch Template Version: $LATEST_VERSION"
+
           aws ec2 create-launch-template-version \
             --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }}" \
-            --source-version '$Latest' \
+            --source-version "$LATEST_VERSION" \
             --version-description "New version with AMI ${{ steps.get_ami_dev.outputs.AMI_ID }}" \
             --launch-template-data '{"ImageId":"'"${{ steps.get_ami_dev.outputs.AMI_ID }}"'"}'
 
-
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
-            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }},Version='$Latest'"
+            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }},Version=$LATEST_VERSION"
         shell: bash
 
       - name: Start Instance Refresh for Dev
@@ -186,17 +192,24 @@ jobs:
           echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Update Launch Template for Demo
+      - name: Update AWS Launch template for Demo
         run: |
+          LATEST_VERSION=$(aws ec2 describe-launch-templates \
+            --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }}" \
+            --query 'LaunchTemplates[0].LatestVersionNumber' \
+            --output text)
+
+          echo "Latest Launch Template Version: $LATEST_VERSION"
+
           aws ec2 create-launch-template-version \
             --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }}" \
-            --source-version '$Latest' \
+            --source-version "$LATEST_VERSION" \
             --version-description "New version with AMI ${{ steps.get_ami_id_demo.outputs.AMI_ID }}" \
-            --launch-template-data '{"ImageId":"'"${{ steps.get_ami_id_demo.outputs.AMI_ID }}"'"}'
+            --launch-template-data '{"ImageId":"'"${{ steps.get_ami_demo.outputs.AMI_ID }}"'"}'
 
           aws autoscaling update-auto-scaling-group \
-            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" \
-            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }},Version='$Latest'"
+            --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
+            --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }},Version=$LATEST_VERSION"
         shell: bash
 
       - name: Start Instance Refresh for Demo
