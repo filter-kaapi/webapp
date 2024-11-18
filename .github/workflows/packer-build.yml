@@ -112,11 +112,10 @@ jobs:
         id: packer_build_dev
         run: |
           packer build -machine-readable -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
-                       -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
-                       -var aws_region=${{ secrets.AWS_REGION }} \
-                       -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                       packer/aws-ubuntu.pkr.hcl | tee packer_output.log
-        working-directory: packer
+                        -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
+                        -var aws_region=${{ secrets.AWS_REGION }} \
+                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+                        packer/aws-ubuntu.pkr.hcl | tee packer_output.log
 
       - name: Extract the AMI ID Dev
         id: get_ami_dev
@@ -178,8 +177,8 @@ jobs:
         id: get_ami_demo
         run: |
           AMI_ID=$(grep -m1 'artifact,0,id' packer_output_demo.log | cut -d, -f6 | cut -d: -f2)
-              echo "AMI_ID=$AMI_ID"
-                         echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
+          echo "AMI_ID=$AMI_ID"
+          echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Update AWS Resources for Demo
@@ -200,6 +199,7 @@ jobs:
             --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" \
             --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}'
         shell: bash
+
       - name: Wait for Instance Refresh to Complete for Demo
         id: wait_instance_refresh_demo
         run: |
