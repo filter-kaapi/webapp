@@ -126,9 +126,16 @@ jobs:
                          echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: 2 Extract Latest Launch Template Version
+        - name: 2 Extract Latest Launch Template Version
         id: fetch_latest_version
         run: |
+          # Configure AWS CLI with development credentials for this step
+          aws-actions/configure-aws-credentials@v4:
+            with:
+              aws-access-key-id: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-region: ${{ secrets.AWS_REGION }}
+
           LATEST_VERSION=$(aws ec2 describe-launch-templates \
             --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }}" \
             --query 'LaunchTemplates[0].LatestVersionNumber' \
@@ -138,6 +145,13 @@ jobs:
       - name: 3 Create New Launch Template Version
         id: create_new_version
         run: |
+          # Configure AWS CLI with development credentials for this step
+          aws-actions/configure-aws-credentials@v4:
+            with:
+              aws-access-key-id: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-region: ${{ secrets.AWS_REGION }}
+
           NEW_VERSION=$(aws ec2 create-launch-template-version \
             --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }}" \
             --source-version ${{ env.LATEST_VERSION }} \
@@ -148,6 +162,13 @@ jobs:
 
       - name: 4 Update Auto Scaling Group
         run: |
+          # Configure AWS CLI with development credentials for this step
+          aws-actions/configure-aws-credentials@v4:
+            with:
+              aws-access-key-id: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-region: ${{ secrets.AWS_REGION }}
+
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
             --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }},Version=${{ env.NEW_VERSION }}"
@@ -155,6 +176,13 @@ jobs:
       - name: 5 Start Instance Refresh
         id: start_instance_refresh
         run: |
+          # Configure AWS CLI with development credentials for this step
+          aws-actions/configure-aws-credentials@v4:
+            with:
+              aws-access-key-id: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-region: ${{ secrets.AWS_REGION }}
+
           REFRESH_ID=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
             --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}' \
@@ -163,6 +191,13 @@ jobs:
 
       - name: 6 Wait for Instance Refresh
         run: |
+          # Configure AWS CLI with development credentials for this step
+          aws-actions/configure-aws-credentials@v4:
+            with:
+              aws-access-key-id: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
+              aws-region: ${{ secrets.AWS_REGION }}
+
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
               --auto-scaling-group-name  "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
