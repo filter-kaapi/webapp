@@ -126,7 +126,7 @@ jobs:
                          echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
         shell: bash
 
-        - name: 2 Extract Latest Launch Template Version
+      - name: 2 Extract Latest Launch Template Version
         id: fetch_latest_version
         run: |
           # Configure AWS CLI with development credentials for this step
