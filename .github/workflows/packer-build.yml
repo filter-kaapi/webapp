@@ -92,32 +92,7 @@ jobs:
           cd packer
           packer init .
 
-      - name: Run Packer fmt
-        run: |
-          packer fmt -check -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
-                          -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
-                          -var aws_region=${{ secrets.AWS_REGION }} \
-                          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                          packer/aws-ubuntu.pkr.hcl
-
-      - name: Run Packer validate
-        run: |
-          packer validate -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
-                          -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
-                          -var aws_region=${{ secrets.AWS_REGION }} \
-                          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                          packer/aws-ubuntu.pkr.hcl
-
-      - name: Run Packer Build Dev
-        id: packer_build_dev
-        run: |
-          packer build -machine-readable \
-                        -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
-                        -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
-                        -var aws_region=${{ secrets.AWS_REGION }} \
-                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                        packer/aws-ubuntu.pkr.hcl | tee packer_output.log
-      # Configure AWS Credentials for Dev Account
+      # Dev Environment Steps
       - name: Configure AWS Credentials for Dev Account
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -125,152 +100,80 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: 1 Extract the AMI ID Dev
+      - name: Run Packer Build for Dev
+        id: packer_build_dev
+        run: |
+          packer build -machine-readable \
+                        -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
+                        -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }} \
+                        -var aws_region=${{ secrets.AWS_REGION }} \
+                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+                        packer/aws-ubuntu.pkr.hcl | tee packer_output_dev.log
+
+      - name: Extract AMI ID for Dev
         id: get_ami_dev
         run: |
-          AMI_ID=$(grep -m1 'artifact,0,id' packer_output.log | cut -d, -f6 | cut -d: -f2)
-              echo "AMI_ID=$AMI_ID"
-                         echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
-                         echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
+          AMI_ID_DEV=$(grep -m1 'artifact,0,id' packer_output_dev.log | cut -d, -f6 | cut -d: -f2)
+          echo "AMI_ID_DEV=$AMI_ID_DEV" >> $GITHUB_ENV
         shell: bash
 
-      - name: Get Launch Templates
-        id: get-launch-template
-        run: echo "launch_template_id=$(aws ec2 describe-launch-templates | jq ".LaunchTemplates[0].LaunchTemplateId" | tr -d '"')" >> $GITHUB_ENV
-
-      - name: Export ID to env and print to check
-        id: export-ids
+      - name: Get Launch Template ID for Dev
+        id: get_launch_template_dev
         run: |
-          echo $AMI_ID
-          echo $launch_template_id
-          echo "ASG_NAME=$(aws autoscaling describe-auto-scaling-groups  | jq '.AutoScalingGroups[0].AutoScalingGroupName' | tr -d '"')" >> $GITHUB_ENV
+          LAUNCH_TEMPLATE_ID_DEV=$(aws ec2 describe-launch-templates --filters "Name=tag:Environment,Values=Dev" --query "LaunchTemplates[0].LaunchTemplateId" --output text)
+          echo "LAUNCH_TEMPLATE_ID_DEV=$LAUNCH_TEMPLATE_ID_DEV" >> $GITHUB_ENV
 
-      - name: Create new Launch Template
-        id: version-launch-template
-        run: aws ec2 create-launch-template-version --launch-template-id $launch_template_id  --source-version 1  --launch-template-data "{\"ImageId\":\"$AMI_ID\"}"
-
-      - name: Get ASG Name and Refresh
-        id: get-asg
+      - name: Update Launch Template for Dev
+        id: update_launch_template_dev
         run: |
-          echo $ASG_NAME
-          REFRESH_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME --query "InstanceRefreshId" --output text)
-          echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
+          aws ec2 create-launch-template-version --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID_DEV }} --source-version 1 --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID_DEV }}\"}"
+          aws ec2 modify-launch-template --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID_DEV }} --default-version \$((\$(aws ec2 describe-launch-template-versions --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID_DEV }} --query "LaunchTemplateVersions[-1].VersionNumber" --output text)))
 
-      # - name: Update AWS Launch template for Dev
-      #   run: |
-      #     LATEST_VERSION=$(aws ec2 describe-launch-templates \
-      #       --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }}" \
-      #       --query 'LaunchTemplates[0].LatestVersionNumber' \
-      #       --output text)
+      - name: Start ASG Instance Refresh for Dev
+        id: start_asg_refresh_dev
+        run: |
+          ASG_NAME_DEV=$(aws autoscaling describe-auto-scaling-groups --filters "Name=tag:Environment,Values=Dev" --query "AutoScalingGroups[0].AutoScalingGroupName" --output text)
+          aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME_DEV
 
-      #     echo "Latest Launch Template Version: $LATEST_VERSION"
+      # Demo Environment Steps
+      - name: Configure AWS Credentials for Demo Account
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      #     aws ec2 create-launch-template-version \
-      #       --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }}" \
-      #       --source-version "$LATEST_VERSION" \
-      #       --version-description "New version with AMI ${{ steps.get_ami_dev.outputs.AMI_ID }}" \
-      #       --launch-template-data '{"ImageId":"'"${{ steps.get_ami_dev.outputs.AMI_ID }}"'"}'
+      - name: Run Packer Build for Demo
+        id: packer_build_demo
+        run: |
+          packer build -machine-readable \
+                        -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }} \
+                        -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO }} \
+                        -var aws_region=${{ secrets.AWS_REGION }} \
+                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+                        packer/aws-ubuntu.pkr.hcl | tee packer_output_demo.log
 
-      #     aws autoscaling update-auto-scaling-group \
-      #       --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
-      #       --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEV }},Version=$LATEST_VERSION"
-      #   shell: bash
+      - name: Extract AMI ID for Demo
+        id: get_ami_demo
+        run: |
+          AMI_ID_DEMO=$(grep -m1 'artifact,0,id' packer_output_demo.log | cut -d, -f6 | cut -d: -f2)
+          echo "AMI_ID_DEMO=$AMI_ID_DEMO" >> $GITHUB_ENV
+        shell: bash
 
-      # - name: Start Instance Refresh for Dev
-      #   id: start_instance_refresh_dev
-      #   run: |
-      #     REFRESH_ID=$(aws autoscaling start-instance-refresh \
-      #       --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
-      #       --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}' \
-      #       --query 'InstanceRefreshId' --output text)
-      #     echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_OUTPUT
-      #   shell: bash
+      - name: Get Launch Template ID for Demo
+        id: get_launch_template_demo
+        run: |
+          LAUNCH_TEMPLATE_ID_DEMO=$(aws ec2 describe-launch-templates --filters "Name=tag:Environment,Values=Demo" --query "LaunchTemplates[0].LaunchTemplateId" --output text)
+          echo "LAUNCH_TEMPLATE_ID_DEMO=$LAUNCH_TEMPLATE_ID_DEMO" >> $GITHUB_ENV
 
-      # - name: Wait for Instance Refresh for Dev
-      #   run: |
-      #     REFRESH_ID=${{ steps.start_instance_refresh_dev.outputs.REFRESH_ID }}
-      #     while true; do
-      #       STATUS=$(aws autoscaling describe-instance-refreshes \
-      #         --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
-      #         --query "InstanceRefreshes[?InstanceRefreshId=='$REFRESH_ID'].Status" \
-      #         --output text)
-      #       echo "Current status: $STATUS"
-      #       if [ "$STATUS" == "Successful" ]; then
-      #         echo "Instance refresh for Dev completed successfully."
-      #         exit 0
-      #       elif [ "$STATUS" == "Failed" ]; then
-      #         echo "Instance refresh for Dev failed."
-      #         exit 1
-      #       else
-      #         echo "Waiting for Dev instance refresh to complete..."
-      #         sleep 30
-      #       fi
-      #     done
-      #   shell: bash
+      - name: Update Launch Template for Demo
+        id: update_launch_template_demo
+        run: |
+          aws ec2 create-launch-template-version --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID_DEMO }} --source-version 1 --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID_DEMO }}\"}"
+          aws ec2 modify-launch-template --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID_DEMO }} --default-version \$((\$(aws ec2 describe-launch-template-versions --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID_DEMO }} --query "LaunchTemplateVersions[-1].VersionNumber" --output text)))
 
-      # # - name: Build AMI for Demo
-      # #   run: |
-      # #     packer build -machine-readable \
-      # #       -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_DEMO }} \
-      # #       -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }} \
-      # #       -var aws_region=${{ secrets.AWS_REGION_DEMO }} \
-      # #       packer/aws-ubuntu.pkr.hcl | tee packer_output_demo.log
-
-      # # - name: Extract AMI ID for Demo
-      # #   id: get_ami_id_demo
-      # #   run: |
-      # #     AMI_ID=$(grep -m1 'artifact,0,id' packer_output_demo.log | cut -d, -f6 | cut -d: -f2)
-      # #     echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
-      # #   shell: bash
-
-      # # - name: Update AWS Launch template for Demo
-      # #   run: |
-      # #     LATEST_VERSION=$(aws ec2 describe-launch-templates \
-      # #       --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }}" \
-      # #       --query 'LaunchTemplates[0].LatestVersionNumber' \
-      # #       --output text)
-
-      # #     echo "Latest Launch Template Version: $LATEST_VERSION"
-
-      # #     aws ec2 create-launch-template-version \
-      # #       --launch-template-name "${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }}" \
-      # #       --source-version "$LATEST_VERSION" \
-      # #       --version-description "New version with AMI ${{ steps.get_ami_id_demo.outputs.AMI_ID }}" \
-      # #       --launch-template-data '{"ImageId":"'"${{ steps.get_ami_demo.outputs.AMI_ID }}"'"}'
-
-      # #     aws autoscaling update-auto-scaling-group \
-      # #       --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}" \
-      # #       --launch-template "LaunchTemplateName=${{ secrets.AWS_LAUNCH_TEMPLATE_NAME_DEMO }},Version=$LATEST_VERSION"
-      # #   shell: bash
-
-      # # - name: Start Instance Refresh for Demo
-      # #   id: start_instance_refresh_demo
-      # #   run: |
-      # #     REFRESH_ID=$(aws autoscaling start-instance-refresh \
-      # #       --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" \
-      # #       --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 50}' \
-      # #       --query 'InstanceRefreshId' --output text)
-      # #     echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_OUTPUT
-      # #   shell: bash
-
-      # # - name: Wait for Instance Refresh for Demo
-      # #   run: |
-      # #     REFRESH_ID=${{ steps.start_instance_refresh_demo.outputs.REFRESH_ID }}
-      # #     while true; do
-      # #       STATUS=$(aws autoscaling describe-instance-refreshes \
-      # #         --auto-scaling-group-name "${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEMO }}" \
-      # #         --query "InstanceRefreshes[?InstanceRefreshId=='$REFRESH_ID'].Status" \
-      # #         --output text)
-      # #       echo "Current status: $STATUS"
-      # #       if [ "$STATUS" == "Successful" ]; then
-      # #         echo "Instance refresh for Demo completed successfully."
-      # #         exit 0
-      # #       elif [ "$STATUS" == "Failed" ]; then
-      # #         echo "Instance refresh for Demo failed."
-      # #         exit 1
-      # #       else
-      # #         echo "Waiting for Demo instance refresh to complete..."
-      # #         sleep 30
-      # #       fi
-      # #     done
-      # #   shell: bash
+      - name: Start ASG Instance Refresh for Demo
+        id: start_asg_refresh_demo
+        run: |
+          ASG_NAME_DEMO=$(aws autoscaling describe-auto-scaling-groups --filters "Name=tag:Environment,Values=Demo" --query "AutoScalingGroups[0].AutoScalingGroupName" --output text)
+          aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME_DEMO
