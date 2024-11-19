@@ -155,15 +155,23 @@ jobs:
             --output text)
           echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
 
-          - name: Update Auto Scaling Group
-          run: |
-            aws autoscaling update-auto-scaling-group \
-              --auto-scaling-group-name "$AWS_AUTOSCALING_GROUP_NAME_DEV" \
-              --launch-template "LaunchTemplateId=$AWS_LAUNCH_TEMPLATE_ID,Version=$NEW_VERSION"
-          env:
-            AWS_AUTOSCALING_GROUP_NAME_DEV: ${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}
-            AWS_LAUNCH_TEMPLATE_ID: ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}
-            NEW_VERSION: ${{ env.NEW_VERSION }}
+      - name: Update Auto Scaling Group
+        run: |
+          set -e  # Exit on any error
+          echo "Updating Auto Scaling Group with the following details:"
+          echo "Auto Scaling Group Name: $AWS_AUTOSCALING_GROUP_NAME_DEV"
+          echo "Launch Template ID: $AWS_LAUNCH_TEMPLATE_ID"
+          echo "Launch Template Version: $NEW_VERSION"
+
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name "$AWS_AUTOSCALING_GROUP_NAME_DEV" \
+            --launch-template "LaunchTemplateId=$AWS_LAUNCH_TEMPLATE_ID,Version=$NEW_VERSION"
+
+          echo "Auto Scaling Group updated successfully."
+        env:
+          AWS_AUTOSCALING_GROUP_NAME_DEV: ${{ secrets.AWS_AUTOSCALING_GROUP_NAME_DEV }}
+          AWS_LAUNCH_TEMPLATE_ID: ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}
+          NEW_VERSION: ${{ env.NEW_VERSION }}
 
       - name: Start Instance Refresh
         id: start_instance_refresh
