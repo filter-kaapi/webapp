@@ -130,12 +130,6 @@ jobs:
                          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
         shell: bash
 
-      - name: Share AMI with Demo Account
-        run: |
-          aws ec2 modify-image-attribute \
-          --image-id $AMI_ID \
-          --launch-permission '{"Add":[{"UserId":"'"${{ secrets.DEMO_ACCOUNT_ID }}"'"}]}'
-
       - name: Get Launch Templates
         id: get-launch-template
         run: echo "launch_template_id=$(aws ec2 describe-launch-templates | jq ".LaunchTemplates[0].LaunchTemplateId" | tr -d '"')" >> $GITHUB_ENV
