@@ -58,7 +58,6 @@ jobs:
           echo "DB_TABLE_NAME=${{ secrets.DB_TABLE_NAME }}" >> .env
           echo "DB_SCHEMA=${{ secrets.DB_SCHEMA }}" >> .env
           echo "DB_TABLE_NAME_PIC=${{ secrets.DB_TABLE_NAME_PIC }}" >> .env
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -74,7 +73,6 @@ jobs:
           cd artifacts
           zip -r ../packer/webapp.zip .
           cd ..
-
       - name: Wait for PostgreSQL to be ready
         run: |
           until pg_isready -h localhost -p 5432; do
@@ -91,7 +89,6 @@ jobs:
         run: |
           cd packer
           packer init .
-
       - name: Run Packer fmt
         run: |
           packer fmt -check -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
@@ -99,7 +96,6 @@ jobs:
                           -var aws_region=${{ secrets.AWS_REGION }} \
                           -var instance_type=${{ secrets.INSTANCE_TYPE }} \
                           packer/aws-ubuntu.pkr.hcl
-
       - name: Run Packer validate
         run: |
           packer validate -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI }} \
@@ -107,7 +103,6 @@ jobs:
                           -var aws_region=${{ secrets.AWS_REGION }} \
                           -var instance_type=${{ secrets.INSTANCE_TYPE }} \
                           packer/aws-ubuntu.pkr.hcl
-
       - name: Run Packer Build Dev
         id: packer_build_dev
         run: |
@@ -126,7 +121,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: 1 Extract the AMI ID Dev
+      - name: Extract the AMI ID Dev
         id: get_ami_dev
         run: |
           AMI_ID=$(grep -m1 'artifact,0,id' packer_output.log | cut -d, -f6 | cut -d: -f2)
@@ -134,6 +129,12 @@ jobs:
                          echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
                          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
         shell: bash
+
+      - name: Share AMI with Demo Account
+        run: |
+          aws ec2 modify-image-attribute \
+            --image-id $AMI_ID \
+            --launch-permission "Add=[{AccountId=${{ secrets.DEMO_ACCOUNT_ID }}]"
 
       - name: Get Launch Templates
         id: get-launch-template
@@ -152,54 +153,6 @@ jobs:
 
       - name: Get ASG Name and Refresh
         id: get-asg
-        run: |
-          echo $ASG_NAME
-          REFRESH_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME --query "InstanceRefreshId" --output text)
-          echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
-
-      - name: Run Packer Build Demo
-        id: packer_build_demo
-        run: |
-          packer build -machine-readable \
-                        -var aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }} \
-                        -var aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO }} \
-                        -var aws_region=${{ secrets.AWS_REGION }} \
-                        -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-                        packer/aws-ubuntu.pkr.hcl | tee packer_output.log
-      # Configure AWS Credentials for Dev Account
-      - name: Configure AWS Credentials for Dev Account
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: 2 Extract the AMI ID Demo
-        id: get_ami_demo
-        run: |
-          AMI_ID=$(grep -m1 'artifact,0,id' packer_output.log | cut -d, -f6 | cut -d: -f2)
-              echo "AMI_ID=$AMI_ID"
-                         echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
-                         echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Get Launch Templates
-        id: get-launch-template_demo
-        run: echo "launch_template_id=$(aws ec2 describe-launch-templates | jq ".LaunchTemplates[0].LaunchTemplateId" | tr -d '"')" >> $GITHUB_ENV
-
-      - name: Export ID to env and print to check
-        id: export-ids_demo
-        run: |
-          echo $AMI_ID
-          echo $launch_template_id
-          echo "ASG_NAME=$(aws autoscaling describe-auto-scaling-groups  | jq '.AutoScalingGroups[0].AutoScalingGroupName' | tr -d '"')" >> $GITHUB_ENV
-
-      - name: Create new Launch Template
-        id: version-launch-template_demo
-        run: aws ec2 create-launch-template-version --launch-template-id $launch_template_id  --source-version 1  --launch-template-data "{\"ImageId\":\"$AMI_ID\"}"
-
-      - name: Get ASG Name and Refresh
-        id: get-asg_demo
         run: |
           echo $ASG_NAME
           REFRESH_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME --query "InstanceRefreshId" --output text)
