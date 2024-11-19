@@ -124,6 +124,7 @@ jobs:
           AMI_ID=$(grep -m1 'artifact,0,id' packer_output.log | cut -d, -f6 | cut -d: -f2)
               echo "AMI_ID=$AMI_ID"
                          echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
+                         echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
         shell: bash
 
       # Configure AWS Credentials for Dev Account
