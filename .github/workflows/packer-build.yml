@@ -133,8 +133,8 @@ jobs:
       - name: Share AMI with Demo Account
         run: |
           aws ec2 modify-image-attribute \
-            --image-id $AMI_ID \
-            --launch-permission "Add=[{AccountId=${{ secrets.DEMO_ACCOUNT_ID }}]"
+          --image-id $AMI_ID \
+          --launch-permission "Add=[{UserId=${{ secrets.DEMO_ACCOUNT_ID }}}]"
 
       - name: Get Launch Templates
         id: get-launch-template
