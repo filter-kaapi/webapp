@@ -130,17 +130,10 @@ jobs:
                          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
         shell: bash
 
-      - name: Get Launch Templates
-        id: get-launch-template
-        run: |
-          LAUNCH_TEMPLATE_ID=$(aws ec2 describe-launch-templates --query 'LaunchTemplates[0].LaunchTemplateId' --output text)
-          echo "launch_template_id=$LAUNCH_TEMPLATE_ID" >> $GITHUB_ENV
-
       - name: Export ID to env and print to check
         id: export-ids
         run: |
           echo $AMI_ID
-          echo $launch_template_id
           echo "ASG_NAME=$(aws autoscaling describe-auto-scaling-groups  | jq '.AutoScalingGroups[0].AutoScalingGroupName' | tr -d '"')" >> $GITHUB_ENV
 
       - name: Share AMI with Demo Account
@@ -155,6 +148,12 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get Launch Templates
+        id: get-launch-template
+        run: |
+          LAUNCH_TEMPLATE_ID=$(aws ec2 describe-launch-templates --query 'LaunchTemplates[0].LaunchTemplateId' --output text)
+          echo "launch_template_id=$LAUNCH_TEMPLATE_ID" >> $GITHUB_ENV
 
       - name: Create new Launch Template
         id: version-launch-template
