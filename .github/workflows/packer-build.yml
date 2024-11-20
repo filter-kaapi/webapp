@@ -151,9 +151,18 @@ jobs:
       - name: Get Launch Templates
         id: get-launch-template
         run: |
-          echo "launch_template_id=$(aws ec2 describe-launch-templates | jq ".LaunchTemplates[0].LaunchTemplateId" | tr -d '"')" >> $GITHUB_ENV
-          echo "this is the launch temaplte:"
-          echo $launch_template_id
+          LAUNCH_TEMPLATE_ID=$(aws ec2 describe-launch-templates | jq -r '.LaunchTemplates[0].LaunchTemplateId')
+          if [ -z "$LAUNCH_TEMPLATE_ID" ]; then
+            echo "Error: No launch template found or AWS CLI command failed"
+            exit 1
+          else
+            echo "launch_template_id=$LAUNCH_TEMPLATE_ID" >> $GITHUB_ENV
+            echo "Launch template ID: $LAUNCH_TEMPLATE_ID"
+          fi
+
+      - name: Use Launch Template ID
+        run: |
+          echo "Using launch template ID: $launch_template_id "
 
       - name: Create new Launch Template
         id: version-launch-template
