@@ -31,7 +31,7 @@ async function authenticate(req, res, next) {
   }
 
   try {
-    const verificationstatus = await User.findOne({ where })
+    // const verificationstatus = await User.findOne({ where })
     const user = await User.findOne({ where: { email } });
     if (!user) {
       // console.log('User not found');
