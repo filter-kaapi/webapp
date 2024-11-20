@@ -130,10 +130,6 @@ jobs:
                          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
         shell: bash
 
-      - name: Get Launch Templates
-        id: get-launch-template
-        run: echo "launch_template_id=$(aws ec2 describe-launch-templates | jq ".LaunchTemplates[0].LaunchTemplateId" | tr -d '"')" >> $GITHUB_ENV
-
       - name: Export ID to env and print to check
         id: export-ids
         run: |
@@ -141,13 +137,69 @@ jobs:
           echo $launch_template_id
           echo "ASG_NAME=$(aws autoscaling describe-auto-scaling-groups  | jq '.AutoScalingGroups[0].AutoScalingGroupName' | tr -d '"')" >> $GITHUB_ENV
 
-      - name: Create new Launch Template
-        id: version-launch-template
-        run: aws ec2 create-launch-template-version --launch-template-id $launch_template_id  --source-version 1  --launch-template-data "{\"ImageId\":\"$AMI_ID\"}"
-
-      - name: Get ASG Name and Refresh
-        id: get-asg
+      - name: Share AMI with Demo Account
         run: |
-          echo $ASG_NAME
-          REFRESH_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME --query "InstanceRefreshId" --output text)
+          aws ec2 modify-image-attribute \
+            --image-id $AMI_ID \
+            --launch-permission "Add=[{UserId=${{ secrets.DEMO_ACCOUNT_ID }}}]"
+
+      - name: Configure AWS Credentials for Demo Account
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CLI_DEMO }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLI_DEMO }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy Infrastructure in Demo Account
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+
+      - name: Create New Launch Template Version
+        run: |
+          latest_version=$(aws ec2 create-launch-template-version \
+            --launch-template-id $launch_template_id \
+            --source-version 1 \
+            --launch-template-data "{\"ImageId\":\"$AMI_ID\"}" \
+            --query 'LaunchTemplateVersion.VersionNumber' --output text)
+          echo "LATEST_VERSION=$latest_version" >> $GITHUB_ENV
+
+      - name: Update Auto Scaling Group
+        run: |
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name $ASG_NAME \
+            --launch-template "LaunchTemplateId=$launch_template_id,Version=$LATEST_VERSION"
+
+      - name: Trigger Instance Refresh
+        run: |
+          REFRESH_ID=$(aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name $ASG_NAME \
+            --query "InstanceRefreshId" --output text)
           echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
+
+      - name: Monitor Instance Refresh
+        run: |
+          TIMEOUT=1800
+          INTERVAL=30
+          ELAPSED=0
+          while true; do
+            status=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name $ASG_NAME \
+              --instance-refresh-ids $REFRESH_ID \
+              --query 'InstanceRefreshes[0].Status' --output text 2>/dev/null)
+            echo "Current refresh status: $status"
+            if [ "$status" = "Successful" ]; then
+              echo "Instance refresh completed successfully."
+              exit 0
+            elif [ "$status" = "Failed" ]; then
+              echo "Instance refresh failed."
+              exit 1
+            fi
+            if [ $ELAPSED -ge $TIMEOUT ]; then
+              echo "Error: Instance refresh timed out."
+              exit 1
+            fi
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
