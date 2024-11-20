@@ -151,8 +151,9 @@ jobs:
       - name: Get Launch Templates
         id: get-launch-template
         run: |
-          LAUNCH_TEMPLATE_ID=$(aws ec2 describe-launch-templates --query 'LaunchTemplates[0].LaunchTemplateId' --output text)
-          echo "launch_template_id=$LAUNCH_TEMPLATE_ID" >> $GITHUB_ENV
+          echo "launch_template_id=$(aws ec2 describe-launch-templates | jq ".LaunchTemplates[0].LaunchTemplateId" | tr -d '"')" >> $GITHUB_ENV
+          echo "this is the launch temaplte:"
+          echo $launch_template_id
 
       - name: Create new Launch Template
         id: version-launch-template
@@ -162,8 +163,8 @@ jobs:
         id: get-asg
         run: |
           echo "ASG_NAME=$(aws autoscaling describe-auto-scaling-groups  | jq '.AutoScalingGroups[0].AutoScalingGroupName' | tr -d '"')" >> $GITHUB_ENV
+          echo "this is the webapp name"
           echo $ASG_NAME
-
 
           REFRESH_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME --query "InstanceRefreshId" --output text)
           echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
