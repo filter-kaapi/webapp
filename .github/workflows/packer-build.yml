@@ -168,13 +168,18 @@ jobs:
         id: version-launch-template
         run: aws ec2 create-launch-template-version --launch-template-id $launch_template_id  --source-version 1  --launch-template-data "{\"ImageId\":\"$AMI_ID\"}"
 
-      - name: Get ASG Name and Refresh
-        id: get-asg
+      - name: Get Auto Scaling Group Name
         run: |
-          echo "ASG_NAME=$(aws autoscaling describe-auto-scaling-groups  | jq '.AutoScalingGroups[0].AutoScalingGroupName' | tr -d '"')" >> $GITHUB_ENV
-          echo "this is the webapp name"
-          echo $ASG_NAME
-
+          ASG_NAME=$(aws autoscaling describe-auto-scaling-groups --query 'AutoScalingGroups[0].AutoScalingGroupName' --output text)
+          if [ -z "$ASG_NAME" ]; then
+            echo "Error: No Auto Scaling group found or AWS CLI command failed"
+            exit 1
+          else
+            echo "ASG_NAME=$ASG_NAME" >> $GITHUB_ENV
+            echo "Auto Scaling group name: $ASG_NAME"
+          fi
+      - name: Refresh instance via asg
+        run: |
           REFRESH_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name $ASG_NAME --query "InstanceRefreshId" --output text)
           echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
 
