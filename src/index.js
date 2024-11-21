@@ -34,6 +34,8 @@ app.use((req, res, next) => {
 
 
 app.use("/healthz", healthzRoute);
+app.use("/demotest", healthzRoute);
+
 app.use("/v1", userRoute);
 
 
