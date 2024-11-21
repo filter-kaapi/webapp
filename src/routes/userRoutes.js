@@ -25,6 +25,7 @@ const path = require("path");
 const UserProfilePic = require("../database/models/userProfilePic");
 const client = require("../metrics/metrics")
 const snsTopicArn = process.env.SNS_TOPIC_ARN;
+const AWS = require("../aws/awsconfig")
 
 const snsClient = new SNSClient({ region: process.env.AWS_REGION });
 
@@ -71,7 +72,7 @@ router.post("/user", async (req, res) => {
         // const hexCode = verificationhexcode(8); // Generate a 6-character hex code
         // console.log(hexCode + "from console");
         const verificationToken = uuidv4();
-        const tokenExpiration = new Date(Date.now() + 2 * 60 * 1000); // 24 hours from now
+        const tokenExpiration = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes from now
 
         const newUser = await User.create({
             email: req.body.email,
